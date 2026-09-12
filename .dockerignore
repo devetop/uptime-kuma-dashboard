@@ -1,0 +1,56 @@
+# =============================================================================
+# .dockerignore — repo root. Reduces build context and keeps secrets out of
+# the image. NOTE: the docker build context IS the repo root, so this file
+# governs what `docker compose build` can see.
+# =============================================================================
+
+# --- Dependencies (reinstalled inside the image via `npm ci`) ---------------
+**/node_modules
+**/.npm
+**/.pnpm-store
+
+# --- Version control --------------------------------------------------------
+.git
+.gitignore
+.gitattributes
+
+# --- Build artifacts (rebuilt in the build stage) ---------------------------
+**/dist
+**/build
+
+# --- Environment files: NEVER ship secrets in the context -------------------
+# `.env.example` files are kept so they remain usable as documentation.
+.env
+.env.*
+**/.env
+**/.env.*
+!**/.env.example
+
+# --- Local / editor / OS noise ---------------------------------------------
+**/*.local
+**/.DS_Store
+**/Thumbs.db
+**/.idea
+**/.vscode
+**/*.swp
+**/*.swo
+
+# --- Logs & caches ----------------------------------------------------------
+**/*.log
+**/npm-debug.log*
+**/.cache
+**/coverage
+**/.tsbuildinfo
+
+# --- Docker meta-files are not needed inside the image ----------------------
+**/Dockerfile
+**/Dockerfile.*
+**/docker-compose*.yml
+**/docker-compose*.yaml
+**/.dockerignore
+
+# --- Docs / agent config ----------------------------------------------------
+README.md
+AGENTS.md
+agent.yaml
+docs

@@ -1,0 +1,85 @@
+# =============================================================================
+# docker-compose.yml — full-stack monitoring dashboard (frontend + backend).
+#
+#   frontend (nginx)  :8080 -> :80    serves the SPA + proxies /api
+#   backend  (node)   :4242 -> :4242  read-only Express API over Uptime Kuma DB
+#
+# The Uptime Kuma database is EXTERNAL and READ-ONLY: no db service, no volume
+# and no schema ownership are declared here on purpose.
+#
+# Build context is the repository root for BOTH services because the frontend
+# `@shared` alias and server/tsconfig.build.json both reference ../shared.
+#
+#   docker compose up --build
+# =============================================================================
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: server/Dockerfile
+    image: monitoring-dashboard-backend:latest
+    restart: unless-stopped
+
+    # DB credentials are injected from server/.env and are NEVER baked into
+    # the image. Copy server/.env.example -> server/.env and fill it in.
+    env_file:
+      - ./server/.env
+
+    environment:
+      NODE_ENV: production
+      # Same-origin requests are proxied by nginx, so no CORS origin is needed
+      # in production. Override here if the API is called cross-origin.
+      PORT: "4242"
+      FRONTEND_ORIGIN: ${FRONTEND_ORIGIN:-*}
+
+    ports:
+      # Exposed for direct API access / debugging. Remove to keep it internal.
+      - "${BACKEND_PORT:-4242}:4242"
+
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:4242/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+    networks:
+      - dashboard
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    image: monitoring-dashboard-frontend:latest
+    restart: unless-stopped
+
+    environment:
+      NODE_ENV: production
+
+    ports:
+      # Host port configurable via .env (FRONTEND_PORT); container stays on 80.
+      - "${FRONTEND_PORT:-8080}:80"
+
+    # Allow nginx (uid 101) to bind port 80 without root.
+    sysctls:
+      - net.ipv4.ip_unprivileged_port_start=80
+
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:80/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+    depends_on:
+      backend:
+        condition: service_healthy
+
+    networks:
+      - dashboard
+
+networks:
+  dashboard:
+    driver: bridge
+    name: monitoring-dashboard-network
