@@ -36,11 +36,11 @@ const RULES: { pattern: RegExp; info: ErrorTypeInfo }[] = [
     info: {
       category: 'UNREACHABLE',
       label: 'EHOSTUNREACH',
-      badgeClass: 'bg-orange-100 text-orange-800 border-orange-200',
+      badgeClass: 'bg-rose-100 text-rose-800 border-rose-200',
     },
   },
   {
-    pattern: /ETIMEDOUT|timed out/i,
+    pattern: /ETIMEDOUT|timed?\s*out/i,
     info: {
       category: 'TIMEOUT',
       label: 'TIMEOUT',
@@ -60,11 +60,11 @@ const RULES: { pattern: RegExp; info: ErrorTypeInfo }[] = [
     info: {
       category: 'TLS',
       label: 'TLS',
-      badgeClass: 'bg-blue-100 text-blue-800 border-blue-200',
+      badgeClass: 'bg-indigo-100 text-indigo-800 border-indigo-200',
     },
   },
   {
-    pattern: /HTTP\s*5\d\d|statusCode.*5\d\d|: 5\d\d\b/,
+    pattern: /HTTP\s*5\d\d|status[\s_]?code.*5\d\d|: 5\d\d\b/i,
     info: {
       category: 'HTTP_5XX',
       label: 'HTTP 5xx',
@@ -72,7 +72,7 @@ const RULES: { pattern: RegExp; info: ErrorTypeInfo }[] = [
     },
   },
   {
-    pattern: /HTTP\s*4\d\d|statusCode.*4\d\d|: 4\d\d\b/,
+    pattern: /HTTP\s*4\d\d|status[\s_]?code.*4\d\d|: 4\d\d\b/i,
     info: {
       category: 'HTTP_4XX',
       label: 'HTTP 4xx',
