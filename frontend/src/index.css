@@ -1,1 +1,4 @@
 @import "tailwindcss";
+
+/* ponytail: tanpa ini, varian `dark:` ikut prefers-color-scheme dan toggle class `.dark` tidak berpengaruh. */
+@custom-variant dark (&:where(.dark, .dark *));

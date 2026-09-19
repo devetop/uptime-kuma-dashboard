@@ -71,6 +71,15 @@ Proyek ini dipaketkan sebagai dua service dalam satu `docker-compose.yml`:
 - Frontend `API_BASE = '/api'` adalah relatif — tidak butuh `VITE_*` env var
 - Backend membaca dari `server/.env` di runtime, injected via compose `environment:`
 
+## Frontend (Dark Mode)
+- Dark mode berbasis class `.dark` di `<html>`, bukan `prefers-color-scheme` murni.
+- `frontend/src/index.css` wajib memuat `@custom-variant dark (&:where(.dark, .dark *));` agar varian `dark:` mengikuti class `.dark` (default Tailwind v4 mengikuti media query sistem dan mengabaikan toggle manual).
+- Urutan resolusi tema saat load via inline script di `frontend/index.html` (anti-FOUC): `localStorage.theme` → `prefers-color-scheme` → light. Script inline minimal, tanpa dependency.
+- Toggle di header (`App.tsx`): ikon moon/sun dengan `aria-label`, simpan pilihan ke `localStorage.theme`, ikuti perubahan sistem (`matchMedia` listener) hanya bila user belum memilih manual.
+- Setiap class warna/background/border/placeholder WAJIB punya pasangan `dark:` — tidak ada elemen yang hanya terang.
+- Badge status (`frontend/src/lib/errors.ts`): tiap `badgeClass` wajib punya pasangan gelap `bg-<warna>-900/30 text-<warna>-300 border-<warna>-800`.
+- Validasi: `cd frontend && npx tsc -p tsconfig.app.json --noEmit && npx vite build` harus lolos.
+
 ## Aturan (ditingkatkan)
 - Jangan tambah dependency tanpa izin
 - Jangan service di luar yang diminta (termasuk database)

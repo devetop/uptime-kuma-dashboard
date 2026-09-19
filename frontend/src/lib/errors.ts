@@ -19,7 +19,7 @@ export interface ErrorTypeInfo {
 const FALLBACK: ErrorTypeInfo = {
   category: 'OTHER',
   label: 'OTHER',
-  badgeClass: 'bg-slate-100 text-slate-800 border-slate-200',
+  badgeClass: 'bg-slate-100 text-slate-800 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-600',
 };
 
 const RULES: { pattern: RegExp; info: ErrorTypeInfo }[] = [
@@ -28,7 +28,7 @@ const RULES: { pattern: RegExp; info: ErrorTypeInfo }[] = [
     info: {
       category: 'REFUSED',
       label: 'ECONNREFUSED',
-      badgeClass: 'bg-red-100 text-red-800 border-red-200',
+      badgeClass: 'bg-red-100 text-red-800 border-red-200 dark:bg-red-900/30 dark:text-red-300 dark:border-red-800',
     },
   },
   {
@@ -36,7 +36,7 @@ const RULES: { pattern: RegExp; info: ErrorTypeInfo }[] = [
     info: {
       category: 'UNREACHABLE',
       label: 'EHOSTUNREACH',
-      badgeClass: 'bg-rose-100 text-rose-800 border-rose-200',
+      badgeClass: 'bg-rose-100 text-rose-800 border-rose-200 dark:bg-rose-900/30 dark:text-rose-300 dark:border-rose-800',
     },
   },
   {
@@ -44,7 +44,7 @@ const RULES: { pattern: RegExp; info: ErrorTypeInfo }[] = [
     info: {
       category: 'TIMEOUT',
       label: 'TIMEOUT',
-      badgeClass: 'bg-yellow-100 text-yellow-800 border-yellow-200',
+      badgeClass: 'bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-300 dark:border-yellow-800',
     },
   },
   {
@@ -52,7 +52,7 @@ const RULES: { pattern: RegExp; info: ErrorTypeInfo }[] = [
     info: {
       category: 'DNS',
       label: 'ENOTFOUND',
-      badgeClass: 'bg-purple-100 text-purple-800 border-purple-200',
+      badgeClass: 'bg-purple-100 text-purple-800 border-purple-200 dark:bg-purple-900/30 dark:text-purple-300 dark:border-purple-800',
     },
   },
   {
@@ -60,7 +60,7 @@ const RULES: { pattern: RegExp; info: ErrorTypeInfo }[] = [
     info: {
       category: 'TLS',
       label: 'TLS',
-      badgeClass: 'bg-indigo-100 text-indigo-800 border-indigo-200',
+      badgeClass: 'bg-indigo-100 text-indigo-800 border-indigo-200 dark:bg-indigo-900/30 dark:text-indigo-300 dark:border-indigo-800',
     },
   },
   {
@@ -68,7 +68,7 @@ const RULES: { pattern: RegExp; info: ErrorTypeInfo }[] = [
     info: {
       category: 'HTTP_5XX',
       label: 'HTTP 5xx',
-      badgeClass: 'bg-orange-100 text-orange-800 border-orange-200',
+      badgeClass: 'bg-orange-100 text-orange-800 border-orange-200 dark:bg-orange-900/30 dark:text-orange-300 dark:border-orange-800',
     },
   },
   {
@@ -76,7 +76,7 @@ const RULES: { pattern: RegExp; info: ErrorTypeInfo }[] = [
     info: {
       category: 'HTTP_4XX',
       label: 'HTTP 4xx',
-      badgeClass: 'bg-amber-100 text-amber-800 border-amber-200',
+      badgeClass: 'bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-800',
     },
   },
 ];
