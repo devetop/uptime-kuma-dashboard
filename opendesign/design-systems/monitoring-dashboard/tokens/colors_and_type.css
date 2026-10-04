@@ -1,0 +1,206 @@
+/* ============================================================
+   Down Monitors — design tokens
+   Imported from /home/ubuntu/monitoring-dashboard/frontend
+   Sources: src/index.css, src/lib/errors.ts, src/components/*.tsx
+   Dark mode: class `.dark` on an ancestor (html), NOT prefers-color-scheme.
+   ============================================================ */
+
+/* ---------- RAW: observed palette steps (Tailwind v4.3.3) ----------
+   ponytail: only steps that appear in the codebase.
+   Ceiling: an unseen shade (e.g. slate-750) is unavailable.
+   Upgrade path: copy the full scale from tailwindcss/theme.css. */
+:root {
+  --slate-50:  oklch(98.4% 0.003 247.858);
+  --slate-100: oklch(96.8% 0.007 247.896);
+  --slate-200: oklch(92.9% 0.013 255.508);
+  --slate-300: oklch(86.9% 0.022 252.894);
+  --slate-400: oklch(70.4% 0.04 256.788);
+  --slate-500: oklch(55.4% 0.046 257.417);
+  --slate-600: oklch(44.6% 0.043 257.281);
+  --slate-700: oklch(37.2% 0.044 257.287);
+  --slate-800: oklch(27.9% 0.041 260.031);
+  --slate-900: oklch(20.8% 0.042 265.755);
+  --slate-950: oklch(12.9% 0.042 264.695);
+  --white:     #fff;
+
+  --blue-50:   oklch(97% 0.014 254.604);
+  --blue-400:  oklch(70.7% 0.165 254.624);
+  --blue-600:  oklch(54.6% 0.245 262.881);
+  --blue-700:  oklch(48.8% 0.243 264.376);
+  --blue-800:  oklch(42.4% 0.199 265.638);
+  --blue-900:  oklch(37.9% 0.146 265.522);
+
+  --red-50:    oklch(97.1% 0.013 17.38);
+  --red-100:   oklch(93.6% 0.032 17.717);
+  --red-300:   oklch(80.8% 0.114 19.571);
+  --red-500:   oklch(63.7% 0.237 25.331);
+  --red-600:   oklch(57.7% 0.245 27.325);
+  --red-700:   oklch(50.5% 0.213 27.518);
+  --red-800:   oklch(44.4% 0.177 26.899);
+  --red-900:   oklch(39.6% 0.141 25.723);
+
+  --rose-50:   oklch(96.9% 0.015 12.422);
+  --rose-300:  oklch(81% 0.117 11.638);
+  --rose-500:  oklch(64.5% 0.246 16.439);
+  --rose-700:  oklch(51.4% 0.222 16.935);
+  --rose-800:  oklch(45.5% 0.188 13.697);
+  --rose-900:  oklch(41% 0.159 10.272);
+
+  --yellow-50: oklch(98.7% 0.026 102.212);
+  --yellow-300: oklch(90.5% 0.182 98.111);
+  --yellow-500: oklch(79.5% 0.184 86.047);
+  --yellow-700: oklch(55.4% 0.135 66.442);
+  --yellow-800: oklch(47.6% 0.114 61.907);
+  --yellow-900: oklch(42.1% 0.095 57.708);
+
+  --purple-50: oklch(97.7% 0.014 308.299);
+  --purple-300: oklch(82.7% 0.119 306.383);
+  --purple-500: oklch(62.7% 0.265 303.9);
+  --purple-700: oklch(49.6% 0.265 301.924);
+  --purple-800: oklch(43.8% 0.218 303.724);
+  --purple-900: oklch(38.1% 0.176 304.987);
+
+  --indigo-50: oklch(96.2% 0.018 272.314);
+  --indigo-300: oklch(78.5% 0.115 274.713);
+  --indigo-500: oklch(58.5% 0.233 277.117);
+  --indigo-700: oklch(45.7% 0.24 277.023);
+  --indigo-800: oklch(39.8% 0.195 277.366);
+  --indigo-900: oklch(35.9% 0.144 278.697);
+
+  --orange-50: oklch(98% 0.016 73.684);
+  --orange-300: oklch(83.7% 0.128 66.29);
+  --orange-500: oklch(70.5% 0.213 47.604);
+  --orange-700: oklch(55.3% 0.195 38.402);
+  --orange-800: oklch(47% 0.157 37.304);
+  --orange-900: oklch(40.8% 0.123 38.172);
+
+  --amber-50:  oklch(98.7% 0.022 95.277);
+  --amber-300: oklch(87.9% 0.169 91.605);
+  --amber-500: oklch(76.9% 0.188 70.08);
+  --amber-700: oklch(55.5% 0.163 48.998);
+  --amber-800: oklch(47.3% 0.137 46.201);
+  --amber-900: oklch(41.4% 0.112 45.904);
+
+  /* ---------- RAW: type ---------- */
+  /* Brand calls for the native stack (Tailwind `font-sans`/`font-mono` defaults). */
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --text-xs: 12px;   --leading-xs: 16px;   /* meta, badges, table headers, code */
+  --text-sm: 14px;   --leading-sm: 20px;   /* body, labels, buttons */
+  --text-base: 16px; --leading-base: 24px; /* h1, card titles */
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --tracking-wide: 0.025em; /* uppercase column headers only */
+
+  /* ---------- RAW: spacing (whole steps of the 4px base; rule from index.css) ---------- */
+  --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px; --space-6: 24px;
+
+  /* ---------- RAW: radius, elevation, motion, focus ---------- */
+  --radius-md: 0.375rem; /* interactive elements + badges */
+  --radius-lg: 0.5rem;   /* the single data container */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05); /* exactly one elevation, page-wide */
+  --duration-color: 150ms; --ease-color: ease; /* transition-colors default */
+  --ring: 2px; /* focus outline width */
+  --breakpoint-wide: 45rem; /* table <-> stacked-card swap; the only breakpoint */
+}
+
+/* ---------- SEMANTIC: surfaces & ink (light default) ----------
+   Never pure #000/#fff as a surface. Surfaces stack page -> panel -> tint. */
+:root {
+  color-scheme: light;
+  --surface-page:        var(--slate-50);
+  --surface-panel:       var(--white);   /* data container, header, inputs, odd rows */
+  --surface-header-tint: var(--slate-100); /* table head row */
+  --surface-row-even:    var(--slate-50);  /* zebra tint */
+  --surface-row-hover:   var(--slate-100);
+  --surface-disabled:    var(--slate-200);
+  --surface-skeleton:    var(--slate-200);
+
+  --border-subtle: var(--slate-200); /* row rules, container edge */
+  --border-strong: var(--slate-300); /* input edges */
+
+  --fg-strong: var(--slate-900); /* names, durations, h1 */
+  --fg-default: var(--slate-800); /* numeric values */
+  --fg-muted:  var(--slate-700);  /* labels, body copy */
+  --fg-meta:   var(--slate-600);  /* mono metadata: IDs, timestamps */
+  --fg-on-accent: var(--white);
+
+  --accent:          var(--blue-600); /* primary fill, focus ring, input focus border */
+  --accent-hover:    var(--blue-700);
+  --accent-text:     var(--blue-700); /* links/underlined actions on light */
+  --accent-text-hover: var(--blue-800);
+  --accent-soft:     var(--blue-50);  /* link hover fill */
+  --focus-ring:      var(--blue-600); /* #2563eb on white = 5.2:1 */
+
+  --alarm:        var(--red-500);  /* banner border */
+  --alarm-bg:     var(--red-50);
+  --alarm-fg:     var(--red-800);
+  --alarm-hover:  var(--red-100);
+}
+
+/* ---------- SEMANTIC: dark remap (class `.dark` on <html>) ---------- */
+.dark {
+  color-scheme: dark;
+  --surface-page:        var(--slate-950);
+  --surface-panel:       var(--slate-900);
+  --surface-header-tint: var(--slate-800);
+  --surface-row-even:    color-mix(in oklab, var(--slate-800) 60%, var(--surface-panel));
+  --surface-row-hover:   var(--slate-800);
+  --surface-disabled:    var(--slate-800);
+  --surface-skeleton:    var(--slate-800);
+
+  --border-subtle: var(--slate-800);
+  --border-strong: var(--slate-700);
+
+  --fg-strong: var(--slate-50);
+  --fg-default: var(--slate-200);
+  --fg-muted:  var(--slate-300);
+  --fg-meta:   var(--slate-400);
+
+  --accent-text:       var(--blue-400);
+  --accent-text-hover: var(--blue-300);
+  --accent-soft:       color-mix(in oklab, var(--blue-900) 30%, transparent);
+  --focus-ring:        var(--blue-400); /* on slate-900 = 6.1:1 */
+
+  --alarm-bg:    color-mix(in oklab, var(--red-900) 20%, transparent);
+  --alarm-fg:    var(--red-300);
+  --alarm-hover: color-mix(in oklab, var(--red-900) 40%, transparent);
+}
+
+/* ---------- SEMANTIC: error-category badges ----------
+   Contrast contract (from src/lib/errors.ts, verified per pair):
+     light  text-*-800 on bg-*-50   >= 6:1;  border-*-700 on white >= 5:1
+     dark   text-*-300 on bg-*-900/30 over slate-950 >= 8:1; border-*-500 >= 3:1 both sides
+   Pattern: bg = 50 (light) / 900 @30% (dark); text = 800/300; border = 700/500.
+   Categories: refused(RED), unreachable(ROSE), timeout(YELLOW), dns(PURPLE),
+               tls(INDIGO), http5xx(ORANGE), http4xx(AMBER), other(slate neutral). */
+:root {
+  --badge-refused-bg:     var(--red-50);     --badge-refused-fg: var(--red-800);   --badge-refused-border: var(--red-700);
+  --badge-unreachable-bg: var(--rose-50);    --badge-unreachable-fg: var(--rose-800); --badge-unreachable-border: var(--rose-700);
+  --badge-timeout-bg:     var(--yellow-50);  --badge-timeout-fg: var(--yellow-800); --badge-timeout-border: var(--yellow-700);
+  --badge-dns-bg:         var(--purple-50);  --badge-dns-fg: var(--purple-800);     --badge-dns-border: var(--purple-700);
+  --badge-tls-bg:         var(--indigo-50);  --badge-tls-fg: var(--indigo-800);     --badge-tls-border: var(--indigo-700);
+  --badge-http5xx-bg:     var(--orange-50);  --badge-http5xx-fg: var(--orange-800); --badge-http5xx-border: var(--orange-700);
+  --badge-http4xx-bg:     var(--amber-50);   --badge-http4xx-fg: var(--amber-800);  --badge-http4xx-border: var(--amber-700);
+  --badge-other-bg:       var(--slate-50);   --badge-other-fg: var(--slate-800);    --badge-other-border: var(--slate-500);
+}
+.dark {
+  --badge-refused-bg:     color-mix(in oklab, var(--red-900) 30%, transparent);     --badge-refused-fg: var(--red-300);   --badge-refused-border: var(--red-500);
+  --badge-unreachable-bg: color-mix(in oklab, var(--rose-900) 30%, transparent);    --badge-unreachable-fg: var(--rose-300); --badge-unreachable-border: var(--rose-500);
+  --badge-timeout-bg:     color-mix(in oklab, var(--yellow-900) 30%, transparent);  --badge-timeout-fg: var(--yellow-300); --badge-timeout-border: var(--yellow-500);
+  --badge-dns-bg:         color-mix(in oklab, var(--purple-900) 30%, transparent);  --badge-dns-fg: var(--purple-300);     --badge-dns-border: var(--purple-500);
+  --badge-tls-bg:         color-mix(in oklab, var(--indigo-900) 30%, transparent);  --badge-tls-fg: var(--indigo-300);     --badge-tls-border: var(--indigo-500);
+  --badge-http5xx-bg:     color-mix(in oklab, var(--orange-900) 30%, transparent);  --badge-http5xx-fg: var(--orange-300); --badge-http5xx-border: var(--orange-500);
+  --badge-http4xx-bg:     color-mix(in oklab, var(--amber-900) 30%, transparent);   --badge-http4xx-fg: var(--amber-300);  --badge-http4xx-border: var(--amber-500);
+  --badge-other-bg:       var(--slate-800);  --badge-other-fg: var(--slate-300);    --badge-other-border: var(--slate-400);
+}
+
+/* Header count badge ("N down") — alarm variant reuses red but with a 600 border,
+   per Header.tsx; neutral variant = the `other` badge tokens. */
+:root {
+  --count-alarm-bg: var(--red-50);  --count-alarm-fg: var(--red-800); --count-alarm-border: var(--red-600);
+}
+.dark {
+  --count-alarm-bg: color-mix(in oklab, var(--red-900) 30%, transparent); --count-alarm-fg: var(--red-300); --count-alarm-border: var(--red-500);
+}
