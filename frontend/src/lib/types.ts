@@ -28,7 +28,8 @@ export type MonitorView = Omit<DownMonitor, 'monitor_id'> & { monitor_id: Monito
 /** Shared fields of the two data surfaces (narrow cards, wide table). */
 export interface MonitorSurfaceProps {
   firstLoad: boolean;
-  query: string;
+  /** True when a text query or any category chip is active — gates "Clear filters". */
+  filtersOn: boolean;
   emptyMessage: string;
   onClearFilter: () => void;
   /** 1s clock, passed down so labels never drift between rows. */

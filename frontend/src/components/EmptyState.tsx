@@ -1,13 +1,14 @@
 interface Props {
-  query: string;
+  /** Whether any filter (text query or category chip) is narrowing the list. */
+  showClear: boolean;
   onClear: () => void;
   message: string;
 }
 
-export function EmptyState({ query, onClear, message }: Props) {
+export function EmptyState({ showClear, onClear, message }: Props) {
   return (
     <p className="flex flex-wrap items-center justify-center gap-x-2 gap-y-2 px-4 py-8 text-center text-sm leading-5 text-slate-700 dark:text-slate-300">
-      {query ? (
+      {showClear ? (
         <>
           <span>{message}</span>
           <button
@@ -15,7 +16,7 @@ export function EmptyState({ query, onClear, message }: Props) {
             onClick={onClear}
             className="rounded-md px-2 py-1 font-semibold text-blue-700 underline underline-offset-2 transition-colors hover:bg-blue-50 hover:text-blue-800 dark:text-blue-400 dark:hover:bg-blue-900/30 dark:hover:text-blue-300"
           >
-            Clear filter
+            Clear filters
           </button>
         </>
       ) : (

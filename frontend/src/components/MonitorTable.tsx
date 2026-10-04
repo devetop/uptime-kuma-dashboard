@@ -10,7 +10,7 @@ const SKELETON_KEYS = ['s0', 's1', 's2', 's3', 's4', 's5'] as const;
 export function MonitorTable({
   rows,
   firstLoad,
-  query,
+  filtersOn,
   emptyMessage,
   onClearFilter,
   now,
@@ -53,7 +53,7 @@ export function MonitorTable({
           ) : rows.length === 0 ? (
             <tr>
               <td colSpan={5}>
-                <EmptyState query={query} onClear={onClearFilter} message={emptyMessage} />
+                <EmptyState showClear={filtersOn} onClear={onClearFilter} message={emptyMessage} />
               </td>
             </tr>
           ) : (

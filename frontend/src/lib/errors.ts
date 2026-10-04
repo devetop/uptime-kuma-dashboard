@@ -22,6 +22,8 @@ export interface ErrorTypeInfo {
    * because those were invisible (light) or sub-3:1 (dark).
    */
   badgeClass: string;
+  /** Rail filter-dot fill: the badge border hue, which already clears >= 3:1 on both surfaces. */
+  dotClass: string;
 }
 
 const FALLBACK: ErrorTypeInfo = {
@@ -29,6 +31,7 @@ const FALLBACK: ErrorTypeInfo = {
   label: 'OTHER',
   badgeClass:
     'bg-slate-50 text-slate-800 border-slate-500 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-400',
+  dotClass: 'bg-slate-500 dark:bg-slate-400',
 };
 
 const RULES: { pattern: RegExp; info: ErrorTypeInfo }[] = [
@@ -39,6 +42,7 @@ const RULES: { pattern: RegExp; info: ErrorTypeInfo }[] = [
       label: 'ECONNREFUSED',
       badgeClass:
         'bg-red-50 text-red-800 border-red-700 dark:bg-red-900/30 dark:text-red-300 dark:border-red-500',
+      dotClass: 'bg-red-700 dark:bg-red-500',
     },
   },
   {
@@ -48,6 +52,7 @@ const RULES: { pattern: RegExp; info: ErrorTypeInfo }[] = [
       label: 'EHOSTUNREACH',
       badgeClass:
         'bg-rose-50 text-rose-800 border-rose-700 dark:bg-rose-900/30 dark:text-rose-300 dark:border-rose-500',
+      dotClass: 'bg-rose-700 dark:bg-rose-500',
     },
   },
   {
@@ -57,6 +62,7 @@ const RULES: { pattern: RegExp; info: ErrorTypeInfo }[] = [
       label: 'TIMEOUT',
       badgeClass:
         'bg-yellow-50 text-yellow-800 border-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300 dark:border-yellow-500',
+      dotClass: 'bg-yellow-700 dark:bg-yellow-500',
     },
   },
   {
@@ -66,6 +72,7 @@ const RULES: { pattern: RegExp; info: ErrorTypeInfo }[] = [
       label: 'ENOTFOUND',
       badgeClass:
         'bg-purple-50 text-purple-800 border-purple-700 dark:bg-purple-900/30 dark:text-purple-300 dark:border-purple-500',
+      dotClass: 'bg-purple-700 dark:bg-purple-500',
     },
   },
   {
@@ -75,6 +82,7 @@ const RULES: { pattern: RegExp; info: ErrorTypeInfo }[] = [
       label: 'TLS',
       badgeClass:
         'bg-indigo-50 text-indigo-800 border-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300 dark:border-indigo-500',
+      dotClass: 'bg-indigo-700 dark:bg-indigo-500',
     },
   },
   {
@@ -84,6 +92,7 @@ const RULES: { pattern: RegExp; info: ErrorTypeInfo }[] = [
       label: 'HTTP 5xx',
       badgeClass:
         'bg-orange-50 text-orange-800 border-orange-700 dark:bg-orange-900/30 dark:text-orange-300 dark:border-orange-500',
+      dotClass: 'bg-orange-700 dark:bg-orange-500',
     },
   },
   {
@@ -93,6 +102,7 @@ const RULES: { pattern: RegExp; info: ErrorTypeInfo }[] = [
       label: 'HTTP 4xx',
       badgeClass:
         'bg-amber-50 text-amber-800 border-amber-700 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-500',
+      dotClass: 'bg-amber-700 dark:bg-amber-500',
     },
   },
 ];

@@ -12,7 +12,7 @@ const SKELETON_KEYS = ['s0', 's1', 's2', 's3', 's4', 's5'] as const;
 export function MonitorCards({
   rows,
   firstLoad,
-  query,
+  filtersOn,
   emptyMessage,
   onClearFilter,
   now,
@@ -36,7 +36,7 @@ export function MonitorCards({
 
       {!firstLoad && rows.length === 0 && (
         <div className="wide:hidden">
-          <EmptyState query={query} onClear={onClearFilter} message={emptyMessage} />
+          <EmptyState showClear={filtersOn} onClear={onClearFilter} message={emptyMessage} />
         </div>
       )}
     </>
