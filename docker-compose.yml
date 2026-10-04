@@ -33,9 +33,9 @@ services:
       PORT: "4242"
       FRONTEND_ORIGIN: ${FRONTEND_ORIGIN:-*}
 
-    ports:
-      # Exposed for direct API access / debugging. Remove to keep it internal.
-      - "${BACKEND_PORT:-4242}:4242"
+    # ports:
+    #   # Exposed for direct API access / debugging. Remove to keep it internal.
+    #   - "${BACKEND_PORT:-4242}:4242"
 
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:4242/api/health"]

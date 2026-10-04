@@ -2,3 +2,67 @@
 
 /* ponytail: tanpa ini, varian `dark:` ikut prefers-color-scheme dan toggle class `.dark` tidak berpengaruh. */
 @custom-variant dark (&:where(.dark, .dark *));
+
+/* Single named breakpoint for the table -> stacked-card swap (720px).
+   Mobile-first: the card list is the default, `wide:` reveals the table.
+   No `min-w-[720px]`, so there is never a horizontal-scroll trap. */
+@custom-variant wide (@media (width >= 45rem));
+
+/* Local conventions (enforced by review, not tooling):
+   - Spacing: whole steps of Tailwind's 4px base only (1 = 4px, 2 = 8px, 3 = 12px, 4 = 16px, 6 = 24px).
+   - Radius: rounded-md on interactive elements and badges, rounded-lg on the single data container.
+   - Elevation: exactly one shadow-sm. Boundaries are hairline borders, not stacked shadows.
+   - Surfaces: never pure #000/#fff. Light: page = slate-50, container/header = white, row tint = slate-50,
+     header tint = slate-100. Dark: page = slate-950, container/header = slate-900, row tint = slate-800/60,
+     header tint = slate-800, recessed code = slate-950. */
+
+@layer base {
+  /* Native scrollbars, form controls and date pickers follow the class-based theme. */
+  :root {
+    color-scheme: light;
+  }
+  .dark {
+    color-scheme: dark;
+  }
+
+  /* Overscroll / canvas colour. <body> paints bg-white|slate-900 from index.html,
+     which is out of scope; this keeps the strip beyond the app root in the same
+     family as the page itself. `html.dark`, not `.dark html` (the class is on <html>). */
+  html {
+    background-color: var(--color-slate-50);
+  }
+  html.dark {
+    background-color: var(--color-slate-950);
+  }
+
+  /* One keyboard-focus treatment, shared by theme toggle, Refresh, search,
+     retry, clear-filter and focusable rows. #2563eb on white = 5.2:1.
+     #60a5fa on slate-900 = 6.1:1 (WCAG 1.4.11 requires 3:1). */
+  :where(button, input, select, textarea, a, [tabindex]):focus-visible {
+    outline: 2px solid var(--color-blue-600);
+    outline-offset: 2px;
+    border-radius: 0.375rem;
+  }
+  .dark :where(button, input, select, textarea, a, [tabindex]):focus-visible {
+    outline-color: var(--color-blue-400);
+  }
+
+  /* Rows and cards are focusable and sit inside a container with overflow-hidden
+     (needed for its rounded corners), so their ring is drawn inset to never clip. */
+  tr:focus-visible,
+  li:focus-visible {
+    outline-offset: -2px;
+  }
+
+  /* All motion in this app is state feedback (skeleton pulse, refresh spinner).
+     Reduced motion collapses every animation and transition to instant. */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}

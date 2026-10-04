@@ -12,14 +12,23 @@ export type ErrorCategory =
 export interface ErrorTypeInfo {
   category: ErrorCategory;
   label: string;
-  /** Tailwind classes for the badge */
+  /**
+   * Tailwind classes for the badge.
+   * Contrast contract (WCAG 2.1 AA, verified per pair):
+   *   light  text-<c>-800 on bg-<c>-50  >= 6:1, border-<c>-700 on white >= 5:1
+   *   dark   text-<c>-300 on bg-<c>-900/30 over slate-950 >= 8:1,
+   *          border-<c>-500 against both the fill and the surface >= 3:1
+   * The border token sits one step darker/lighter than the old -200/-800 pair
+   * because those were invisible (light) or sub-3:1 (dark).
+   */
   badgeClass: string;
 }
 
 const FALLBACK: ErrorTypeInfo = {
   category: 'OTHER',
   label: 'OTHER',
-  badgeClass: 'bg-slate-100 text-slate-800 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-600',
+  badgeClass:
+    'bg-slate-50 text-slate-800 border-slate-500 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-400',
 };
 
 const RULES: { pattern: RegExp; info: ErrorTypeInfo }[] = [
@@ -28,7 +37,8 @@ const RULES: { pattern: RegExp; info: ErrorTypeInfo }[] = [
     info: {
       category: 'REFUSED',
       label: 'ECONNREFUSED',
-      badgeClass: 'bg-red-100 text-red-800 border-red-200 dark:bg-red-900/30 dark:text-red-300 dark:border-red-800',
+      badgeClass:
+        'bg-red-50 text-red-800 border-red-700 dark:bg-red-900/30 dark:text-red-300 dark:border-red-500',
     },
   },
   {
@@ -36,7 +46,8 @@ const RULES: { pattern: RegExp; info: ErrorTypeInfo }[] = [
     info: {
       category: 'UNREACHABLE',
       label: 'EHOSTUNREACH',
-      badgeClass: 'bg-rose-100 text-rose-800 border-rose-200 dark:bg-rose-900/30 dark:text-rose-300 dark:border-rose-800',
+      badgeClass:
+        'bg-rose-50 text-rose-800 border-rose-700 dark:bg-rose-900/30 dark:text-rose-300 dark:border-rose-500',
     },
   },
   {
@@ -44,7 +55,8 @@ const RULES: { pattern: RegExp; info: ErrorTypeInfo }[] = [
     info: {
       category: 'TIMEOUT',
       label: 'TIMEOUT',
-      badgeClass: 'bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-300 dark:border-yellow-800',
+      badgeClass:
+        'bg-yellow-50 text-yellow-800 border-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300 dark:border-yellow-500',
     },
   },
   {
@@ -52,7 +64,8 @@ const RULES: { pattern: RegExp; info: ErrorTypeInfo }[] = [
     info: {
       category: 'DNS',
       label: 'ENOTFOUND',
-      badgeClass: 'bg-purple-100 text-purple-800 border-purple-200 dark:bg-purple-900/30 dark:text-purple-300 dark:border-purple-800',
+      badgeClass:
+        'bg-purple-50 text-purple-800 border-purple-700 dark:bg-purple-900/30 dark:text-purple-300 dark:border-purple-500',
     },
   },
   {
@@ -60,7 +73,8 @@ const RULES: { pattern: RegExp; info: ErrorTypeInfo }[] = [
     info: {
       category: 'TLS',
       label: 'TLS',
-      badgeClass: 'bg-indigo-100 text-indigo-800 border-indigo-200 dark:bg-indigo-900/30 dark:text-indigo-300 dark:border-indigo-800',
+      badgeClass:
+        'bg-indigo-50 text-indigo-800 border-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300 dark:border-indigo-500',
     },
   },
   {
@@ -68,7 +82,8 @@ const RULES: { pattern: RegExp; info: ErrorTypeInfo }[] = [
     info: {
       category: 'HTTP_5XX',
       label: 'HTTP 5xx',
-      badgeClass: 'bg-orange-100 text-orange-800 border-orange-200 dark:bg-orange-900/30 dark:text-orange-300 dark:border-orange-800',
+      badgeClass:
+        'bg-orange-50 text-orange-800 border-orange-700 dark:bg-orange-900/30 dark:text-orange-300 dark:border-orange-500',
     },
   },
   {
@@ -76,7 +91,8 @@ const RULES: { pattern: RegExp; info: ErrorTypeInfo }[] = [
     info: {
       category: 'HTTP_4XX',
       label: 'HTTP 4xx',
-      badgeClass: 'bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-800',
+      badgeClass:
+        'bg-amber-50 text-amber-800 border-amber-700 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-500',
     },
   },
 ];
