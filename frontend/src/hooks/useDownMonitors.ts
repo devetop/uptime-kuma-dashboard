@@ -1,23 +1,40 @@
-import { useState, useEffect, useCallback } from 'react';
-import type { DownMonitor } from '@shared/index.ts';
+import { useCallback, useEffect, useState } from 'react';
+import type { MonitorView, Result } from '../lib/types';
 import { fetchDownMonitors } from '../lib/api';
 
-export function useDownMonitors(pollMs = 30_000) {
-  const [data, setData] = useState<DownMonitor[]>([]);
-  const [total, setTotal] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+/**
+ * Polling state as a discriminated `Result`. `state === 'loading'` means "no
+ * response has ever settled"; once the first attempt finishes the state is
+ * 'loaded' for good — a reload only clears `error`, it never re-arms `loading`.
+ * Data and total survive a failed attempt, so the dashboard never blanks out.
+ */
+export function useDownMonitors(pollMs = 30_000): Result<MonitorView> & {
+  reload: () => Promise<void>;
+} {
+  const [result, setResult] = useState<Result<MonitorView>>({
+    state: 'loading',
+    loading: true,
+    error: null,
+    data: [],
+    total: 0,
+  });
 
   const load = useCallback(async () => {
-    setError(null);
+    setResult((prev) =>
+      // The original cleared `error` before awaiting; `loading` was untouched.
+      prev.state === 'loading' ? prev : { ...prev, state: 'loaded', error: null },
+    );
     try {
       const res = await fetchDownMonitors();
-      setData(res.data);
-      setTotal(res.total);
+      setResult({ state: 'loaded', loading: false, error: null, data: res.data, total: res.total });
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unknown error');
-    } finally {
-      setLoading(false);
+      const message = err instanceof Error ? err.message : 'Unknown error';
+      setResult((prev) => ({
+        ...prev,
+        state: 'loaded',
+        loading: false,
+        error: message,
+      }));
     }
   }, []);
 
@@ -27,5 +44,5 @@ export function useDownMonitors(pollMs = 30_000) {
     return () => clearInterval(id);
   }, [load, pollMs]);
 
-  return { data, total, loading, error, reload: load };
+  return { ...result, reload: load };
 }

@@ -1,11 +1,11 @@
-import type { DownMonitor } from '@shared/index.ts';
+import type { MonitorView } from '../lib/types';
 import { classifyError } from '../lib/errors';
 
 /**
  * One source of truth for how a monitor reads. The wide row and the narrow card
  * both call it, so the two views can never drift apart.
  */
-function display(monitor: DownMonitor) {
+function display(monitor: MonitorView) {
   return {
     type: classifyError(monitor.msg),
     /** ISO instant on <time datetime>. The human label is rendered visibly,
@@ -17,7 +17,7 @@ function display(monitor: DownMonitor) {
 }
 
 interface Props {
-  monitor: DownMonitor;
+  monitor: MonitorView;
   /** Pre-computed relative label, e.g. "12 minutes ago" */
   relativeTime: string;
   /** Pre-computed absolute label */
