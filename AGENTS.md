@@ -16,7 +16,7 @@
 Proyek ini dipaketkan sebagai dua service dalam satu `docker-compose.yml`:
 
 1. **frontend** — Vite + React dibangun melalui multi-stage build:
-   - Stage build: `node:22-alpine` (ikuti `engines.node` dari `frontend/package.json`)
+   - Stage build: `node:22-alpine` (`engines.node` frontend = `>=20.6.0`)
    - Hasil: folder `dist/` di-stage build
    - Stage runtime: `nginx:alpine` yang serve file statis dari stage build
    - `nginx.conf` mendukung client-side routing (fallback ke `index.html`)
@@ -24,12 +24,12 @@ Proyek ini dipaketkan sebagai dua service dalam satu `docker-compose.yml`:
 
 2. **backend** — Express API dibangun melalui `node:22-alpine`:
    - Mengikuti `engines.node` dari `server/package.json` (`>=22.14.0`)
-   - Environment variables diunggah dari `server/.env.example` (bukan dihardcode)
-   - Health endpoint: `GET /health`
+   - Environment variables dari `server/.env` via compose `env_file:` (bukan dihardcode)
+   - Health endpoint: `GET /api/health`
    - Service mendengarkan pada port 4242
 
 ### Dockerfile Frontend (multi-stage)
-- Build stage: `node:22-alpine` → `npm ci` → `vite build` → hasil `dist/`
+- Build stage: `node:22-alpine` → `npm ci` → `npm run build` (`tsc -p tsconfig.app.json && vite build`) → hasil `dist/`
 - Runtime stage: `nginx:alpine` → copy `dist/` dari build stage → konfig nginx dengan fallback routing + reverse proxy ke backend
 - Container berjalan sebagai user non-root (101:101)
 - Health check via `wget -qO- http://localhost:80/`
@@ -38,24 +38,26 @@ Proyek ini dipaketkan sebagai dua service dalam satu `docker-compose.yml`:
   - listen [::]:80
   - root /usr/share/nginx/html
   - index index.html
-  - `location /api { proxy_pass http://backend:4242; }` — reverse proxy ke backend
+  - `location /api` → reverse proxy ke `backend:4242` (resolver Docker, di-resolve saat request)
+  - `location /assets/` → cache immutable untuk aset ber-hash Vite
   - `location / { try_files $uri $uri/ /index.html; }` — client-side routing fallback
 
-### Dockerfile Backend (single-stage)
-- Base image: `node:22-alpine`
-- `WORKDIR /app`
-- Copy `package.json` + `package-lock.json` first → `npm ci --omit=dev` → cache-friendly
-- Copy source code `src/` → build TypeScript ke `dist/` → hapus `src/`
+### Dockerfile Backend (multi-stage)
+- Build stage: `node:22-alpine` → `npm ci --include=dev` → `npm run build` (`tsc -p tsconfig.build.json`) → hasil `dist/server/src/`
+- Runtime stage: `node:22-alpine` → `npm ci --omit=dev` → copy `dist/` dari build stage (source `src/` tidak ikut)
+- Build context = root repo; `tsconfig.build.json` (`rootDir: "../"`) mereferensikan `../shared`
 - RUN sebagai user non-root (101:101)
 - Expose port 4242
-- Health check via `wget -qO- http://localhost:4242/health`
+- Health check via `wget -qO- "http://127.0.0.1:${PORT:-4242}/api/health"`
 
 ### docker-compose.yml
-- Dua service: `frontend` (nginx:alpine, port 80) + `backend` (node:22-alpine, port 4 konsisten: 4242)
-- Port mapping eksplisit: `8080:80` untuk frontend (host:container), `4242:4242` bebas disesuaikan kebutuhan
-- Jaringan internal Docker untuk komunikasi antar service (frontend reverse proxy ke backend via `backend:4242`)
-- Restart policy "unless-stopped" untuk keduanya
-- Environment variables disuntik ke service backend dari file `.env` (compose auto-load `.env` dari root)
+- Dua service: `frontend` (nginx:alpine, port 80) + `backend` (node:22-alpine, port 4242)
+- Build context = root repo untuk kedua service
+- Port mapping frontend: `${FRONTEND_PORT:-8080}:80` (host:container); port backend 4242 tidak dipublish (hanya internal; mapping `ports` dikomentari untuk debug)
+- Jaringan internal Docker `monitoring-dashboard-network` untuk komunikasi antar service (frontend reverse proxy ke backend via `backend:4242`)
+- Restart policy "unless-stopped" untuk keduanya; `frontend` `depends_on` `backend` (`condition: service_healthy`)
+- `frontend` butuh `sysctl net.ipv4.ip_unprivileged_port_start=80` agar uid 101 bisa bind port 80
+- Environment backend: DB dari `env_file: ./server/.env`; `NODE_ENV`, `PORT`, `FRONTEND_ORIGIN` dari blok `environment:`
 - Jangan sertakan service database di compose ini — DB Uptime Kuma bersifat eksternal dan read-only
 
 ### .dockerignore (di root repo)
@@ -69,15 +71,15 @@ Proyek ini dipaketkan sebagai dua service dalam satu `docker-compose.yml`:
 - Semua environment variables mengikuti `.env.example` di masing-masing paket
 - **Jangan pernah** hardcode kredensial DB (DB_TYPE, DB_HOST, DB_NAME, DB_USER, DB_PASS) ke dalam image
 - Frontend `API_BASE = '/api'` adalah relatif — tidak butuh `VITE_*` env var
-- Backend membaca dari `server/.env` di runtime, injected via compose `environment:`
+- Backend membaca `server/.env` via compose `env_file:`; `PORT`/`FRONTEND_ORIGIN`/`NODE_ENV` di-set di blok `environment:`
 
 ## Frontend (Dark Mode)
 - Dark mode berbasis class `.dark` di `<html>`, bukan `prefers-color-scheme` murni.
 - `frontend/src/index.css` wajib memuat `@custom-variant dark (&:where(.dark, .dark *));` agar varian `dark:` mengikuti class `.dark` (default Tailwind v4 mengikuti media query sistem dan mengabaikan toggle manual).
 - Urutan resolusi tema saat load via inline script di `frontend/index.html` (anti-FOUC): `localStorage.theme` → `prefers-color-scheme` → light. Script inline minimal, tanpa dependency.
-- Toggle di header (`App.tsx`): ikon moon/sun dengan `aria-label`, simpan pilihan ke `localStorage.theme`, ikuti perubahan sistem (`matchMedia` listener) hanya bila user belum memilih manual.
+- Toggle di `frontend/src/components/Header.tsx` (state: `frontend/src/hooks/useTheme.ts`): ikon moon/sun dengan `aria-label`, simpan pilihan ke `localStorage.theme`, ikuti perubahan sistem (`matchMedia` listener) hanya bila user belum memilih manual.
 - Setiap class warna/background/border/placeholder WAJIB punya pasangan `dark:` — tidak ada elemen yang hanya terang.
-- Badge status (`frontend/src/lib/errors.ts`): tiap `badgeClass` wajib punya pasangan gelap `bg-<warna>-900/30 text-<warna>-300 border-<warna>-800`.
+- Badge status (`frontend/src/lib/errors.ts`): tiap `badgeClass` wajib punya pasangan gelap `bg-<warna>-900/30 text-<warna>-300 border-<warna>-500`.
 - Validasi: `cd frontend && npx tsc -p tsconfig.app.json --noEmit && npx vite build` harus lolos.
 
 ## Aturan (ditingkatkan)
