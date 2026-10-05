@@ -23,7 +23,7 @@ export function Header({ slot, loading, isDark, onRefresh, onToggleTheme }: Prop
           Down Monitors
         </h1>
         <span className="min-w-0 grow font-mono text-xs leading-4 tabular-nums text-slate-600 dark:text-slate-400">
-          <LiveState slot={slot} /> · auto-refresh 30s
+          <LiveState slot={slot} /> · auto-refresh 5s
         </span>
 
         <div className="flex shrink-0 items-center gap-2">

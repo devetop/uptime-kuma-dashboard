@@ -8,7 +8,7 @@ import { fetchDownMonitors } from '../lib/api';
  * 'loaded' for good — a reload only clears `error`, it never re-arms `loading`.
  * Data and total survive a failed attempt, so the dashboard never blanks out.
  */
-export function useDownMonitors(pollMs = 30_000): Result<MonitorView> & {
+export function useDownMonitors(pollMs = 5_000): Result<MonitorView> & {
   reload: () => Promise<void>;
 } {
   const [result, setResult] = useState<Result<MonitorView>>({

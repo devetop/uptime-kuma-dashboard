@@ -11,7 +11,7 @@ import { MonitorRecords } from './components/MonitorRecords';
 
 export function App() {
   const now = useTicker(1_000);
-  const { data, total, loading, error, reload } = useDownMonitors(30_000);
+  const { data, total, loading, error, reload } = useDownMonitors(5_000);
   const { isDark, toggleTheme } = useTheme();
 
   const [filter, setFilter] = useState('');
