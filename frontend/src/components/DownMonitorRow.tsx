@@ -1,15 +1,10 @@
 import type { MonitorView } from '../lib/types';
 import { classifyError } from '../lib/errors';
+import { FigmaIcon, DribbbleIcon, SlackIcon } from './icons';
 
-/**
- * One source of truth for how a monitor reads. The wide row and the narrow card
- * both call it, so the two views can never drift apart.
- */
 function display(monitor: MonitorView) {
   return {
     type: classifyError(monitor.msg),
-    /** ISO instant on <time datetime>. The human label is rendered visibly,
-     *  never tooltip-only, so absolute time is reachable by keyboard and AT. */
     iso: new Date(monitor.timestamp * 1000).toISOString(),
     ping: `${monitor.ping > 0 ? monitor.ping.toFixed(2) : '0'} ms`,
     message: monitor.msg ?? 'No error message',
@@ -18,158 +13,200 @@ function display(monitor: MonitorView) {
 
 interface Props {
   monitor: MonitorView;
-  /** Pre-computed relative label, e.g. "12 minutes ago" */
   relativeTime: string;
-  /** Pre-computed absolute label */
   absoluteLabel: string;
 }
 
-/** 12px rhythm at <1024px, 8px at >=1024px (both multiples of the 4px scale). */
-const CELL = 'px-4 py-3 align-top lg:py-2';
-
+const CELL = 'py-4 px-6 align-middle';
 const ROW_SURFACE =
-  'odd:bg-white even:bg-slate-50 hover:bg-slate-100 dark:odd:bg-slate-900 dark:even:bg-slate-800/60 dark:hover:bg-slate-800';
+  'hover:bg-slate-50/80 dark:hover:bg-slate-800/60 transition-colors group';
 
-const NAME = 'text-sm leading-5 font-semibold text-slate-900 dark:text-slate-50';
-const META = 'font-mono text-xs leading-4 tabular-nums text-slate-600 dark:text-slate-400';
-/** Numeric styling with no colour, so each call site owns exactly one text colour
- *  (two dark:text-* on one element would be a source-order coin flip). */
-const NUM = 'font-mono text-sm leading-5 tabular-nums';
-const VALUE = `${NUM} text-slate-800 dark:text-slate-200`;
-const DURATION = `${NUM} font-semibold text-slate-900 dark:text-slate-50`;
-// Error message: monospace text only. A tinted chip was invisible on the odd
-// (white) rows and visible on the even (slate-50) ones, so the boundary lay out
-// with the zebra stripes. Plain mono text reads identically on every surface.
-const CODE =
-  'block break-words font-mono text-xs leading-4 text-slate-700 dark:text-slate-300';
-const BADGE_BASE =
-  'inline-flex items-center rounded-md border px-2 py-1 text-xs leading-4 font-semibold ';
+function ServiceAvatar({ name }: { name: string }) {
+  const lower = name.toLowerCase();
+  if (lower.includes('figma')) {
+    return (
+      <div className="w-8 h-8 rounded-full bg-slate-950 flex items-center justify-center p-1.5 shrink-0 shadow-sm">
+        <FigmaIcon className="w-full h-full" />
+      </div>
+    );
+  }
+  if (lower.includes('dribbble')) {
+    return (
+      <div className="w-8 h-8 rounded-full bg-rose-50 border border-rose-100 dark:bg-rose-950/60 dark:border-rose-900/60 flex items-center justify-center p-1.5 shrink-0 text-rose-500 shadow-sm">
+        <DribbbleIcon className="w-4 h-4 fill-rose-500" />
+      </div>
+    );
+  }
+  return (
+    <div className="w-8 h-8 rounded-full bg-brand-50 border border-brand-100 dark:bg-brand-950/60 dark:border-brand-900/60 flex items-center justify-center text-xs font-bold text-brand-600 dark:text-brand-400 shrink-0 shadow-sm">
+      {name.slice(0, 1).toUpperCase()}
+    </div>
+  );
+}
 
-/** Wide-viewport row (>= 45rem). Focusable so a whole record is keyboard-reachable. */
+/**
+ * Wide-viewport row (>= 45rem) matching "Latest Alerts" table in redesign.png:
+ * Columns: Check (Service Avatar + Name + URL), Time, Duration, Notified (Slack hook / Message), Action (Details / Badge)
+ */
 export function DownMonitorRow({ monitor, relativeTime, absoluteLabel }: Props) {
   const { type, iso, ping, message } = display(monitor);
 
   return (
-    <tr tabIndex={0} className={`border-b border-slate-200 transition-colors last:border-b-0 dark:border-slate-800 ${ROW_SURFACE}`}>
-      <th scope="row" className={`${CELL} font-normal`}>
-        <span className={`block break-words ${NAME}`}>{monitor.monitor_name}</span>
-        <span className={`mt-1 block ${META}`}>ID #{monitor.monitor_id}</span>
-      </th>
-
+    <tr
+      tabIndex={0}
+      className={`border-b border-slate-100 dark:border-slate-800/80 text-xs font-medium last:border-b-0 ${ROW_SURFACE}`}
+    >
+      {/* Check column: Icon + Service Name + URL */}
       <td className={CELL}>
-        <span className={`block ${DURATION}`}>{relativeTime}</span>
-        <time dateTime={iso} className={`mt-1 block ${META}`}>
-          {absoluteLabel}
-        </time>
+        <div className="flex items-center gap-3">
+          <ServiceAvatar name={monitor.monitor_name} />
+          <div className="min-w-0">
+            <p className="font-bold text-slate-900 dark:text-white leading-snug truncate max-w-[180px]">
+              {monitor.monitor_name}
+            </p>
+            <p className="text-[10px] text-slate-400 truncate max-w-[180px]">
+              ID #{monitor.monitor_id} · {ping}
+            </p>
+          </div>
+        </div>
       </td>
 
-      <td className={`${CELL} text-right ${VALUE}`}>{ping}</td>
-
-      <td className={CELL}>
-        <code className={`${CODE} max-w-96`}>{message}</code>
+      {/* Time column */}
+      <td className={`${CELL} text-slate-600 dark:text-slate-300 whitespace-nowrap`}>
+        <time dateTime={iso}>{absoluteLabel}</time>
       </td>
 
+      {/* Duration column */}
+      <td className={`${CELL} text-slate-700 dark:text-slate-200 whitespace-nowrap font-semibold`}>
+        Ongoing for {relativeTime.replace(' ago', '')}
+      </td>
 
-      <td className={`${CELL} whitespace-nowrap`}>
-        <span className={`${BADGE_BASE}${type.badgeClass}`}>{type.label}</span>
+      {/* Notified column */}
+      <td className={`${CELL} text-slate-500 dark:text-slate-400 whitespace-nowrap`}>
+        <div className="flex items-center gap-1.5 max-w-[220px] truncate">
+          <SlackIcon className="text-slate-400 shrink-0" />
+          <span className="truncate">
+            Slack to <span className="font-semibold text-slate-700 dark:text-slate-200">#notifyme</span>
+            <span className="text-slate-400 text-[10px] ml-1">({type.label})</span>
+          </span>
+        </div>
+        <p className="text-[10px] text-slate-400 dark:text-slate-500 truncate max-w-[220px] mt-0.5 font-mono">
+          {message}
+        </p>
+      </td>
+
+      {/* Action column */}
+      <td className={`${CELL} text-right whitespace-nowrap`}>
+        <div className="flex items-center justify-end gap-2">
+          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border ${type.badgeClass}`}>
+            {type.label}
+          </span>
+          <a
+            href={`#details-${monitor.monitor_id}`}
+            className="text-brand-600 dark:text-brand-400 hover:text-brand-700 font-semibold text-xs transition"
+          >
+            Details
+          </a>
+        </div>
       </td>
     </tr>
   );
 }
 
-/** Narrow-viewport card (< 45rem). Same fields, explicit labels, stacked. */
+/** Narrow-viewport card (< 45rem) matching mobile Stitch screen card layout */
 export function DownMonitorCard({ monitor, relativeTime, absoluteLabel }: Props) {
   const { type, iso, ping, message } = display(monitor);
 
   return (
-    <li
+    <article
       tabIndex={0}
-      className={`border-b border-slate-200 p-4 transition-colors last:border-b-0 dark:border-slate-800 ${ROW_SURFACE}`}
+      className="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200/70 dark:border-slate-800 shadow-ios transition-colors hover:border-slate-300 dark:hover:border-slate-700"
     >
-      <div className="flex flex-wrap items-start justify-between gap-2">
-        <h2 className="min-w-0 grow text-base leading-6 font-semibold break-words text-slate-900 dark:text-slate-50">
-          {monitor.monitor_name}
-        </h2>
-        <span className={`shrink-0 ${BADGE_BASE}${type.badgeClass}`}>{type.label}</span>
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex items-center gap-3">
+          <ServiceAvatar name={monitor.monitor_name} />
+          <div>
+            <h4 className="text-xs font-bold text-slate-900 dark:text-white leading-snug">
+              {monitor.monitor_name}
+            </h4>
+            <p className="text-[10px] text-slate-400">
+              <time dateTime={iso}>{absoluteLabel}</time>
+            </p>
+          </div>
+        </div>
+        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border ${type.badgeClass}`}>
+          {relativeTime.replace(' ago', '')}
+        </span>
       </div>
 
-      <dl className="mt-2 grid grid-cols-2 gap-2">
-        <div>
-          <dt className={`font-medium ${META}`}>Down for</dt>
-          <dd className={`mt-1 ${DURATION}`}>{relativeTime}</dd>
+      <div className="mt-3 pt-2.5 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-[11px]">
+        <div className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400 truncate max-w-[200px]">
+          <SlackIcon className="text-slate-400 shrink-0" />
+          <span className="truncate">Slack: #notifyme ({ping})</span>
         </div>
-        <div>
-          <dt className={`font-medium ${META}`}>Ping</dt>
-          <dd className={`mt-1 ${VALUE}`}>{ping}</dd>
-        </div>
-        <div className="col-span-2">
-          <dt className={`font-medium ${META}`}>Last checked</dt>
-          <dd>
-            <time dateTime={iso} className={`mt-1 block ${VALUE}`}>
-              {absoluteLabel}
-            </time>
-            <span className={`mt-1 block ${META}`}>ID #{monitor.monitor_id}</span>
-          </dd>
-        </div>
-      </dl>
-
-      <div className="mt-2">
-        <p className={`font-medium ${META}`}>Error message</p>
-        <code className={`mt-1 ${CODE}`}>{message}</code>
+        <a
+          href={`#details-${monitor.monitor_id}`}
+          className="font-semibold text-brand-600 dark:text-brand-400 hover:underline shrink-0"
+        >
+          Details
+        </a>
       </div>
-    </li>
+      <p className="mt-2 text-[10px] font-mono text-slate-500 dark:text-slate-400 break-words bg-slate-50 dark:bg-slate-800/50 p-1.5 rounded-lg">
+        {message}
+      </p>
+    </article>
   );
 }
 
 const BAR = 'animate-pulse rounded-md bg-slate-200 dark:bg-slate-800';
 
-/** Skeleton matching the real row geometry (two lines per cell, ~56px tall). */
+/** Skeleton matching table row geometry */
 export function DownMonitorRowSkeleton() {
   return (
-    <tr
-      aria-hidden
-      className={`border-b border-slate-200 last:border-b-0 dark:border-slate-800 ${ROW_SURFACE}`}
-    >
+    <tr aria-hidden className="border-b border-slate-100 dark:border-slate-800/80">
       <td className={CELL}>
-        <span className={`block h-5 w-44 ${BAR}`} />
-        <span className={`mt-1 block h-4 w-16 ${BAR}`} />
+        <div className="flex items-center gap-3">
+          <div className={`w-8 h-8 rounded-full ${BAR}`} />
+          <div className="space-y-1">
+            <span className={`block h-3.5 w-32 ${BAR}`} />
+            <span className={`block h-2.5 w-20 ${BAR}`} />
+          </div>
+        </div>
       </td>
       <td className={CELL}>
-        <span className={`block h-5 w-24 ${BAR}`} />
-        <span className={`mt-1 block h-4 w-28 ${BAR}`} />
+        <span className={`block h-3.5 w-28 ${BAR}`} />
       </td>
       <td className={CELL}>
-        <span className={`ml-auto block h-5 w-12 ${BAR}`} />
+        <span className={`block h-3.5 w-24 ${BAR}`} />
       </td>
       <td className={CELL}>
-        <span className={`block h-4 w-full max-w-96 ${BAR}`} />
-        <span className={`mt-2 block h-4 w-2/3 max-w-64 ${BAR}`} />
+        <span className={`block h-3.5 w-40 ${BAR}`} />
       </td>
-      <td className={CELL}>
-        <span className={`block h-6 w-24 ${BAR}`} />
+      <td className={`${CELL} text-right`}>
+        <span className={`ml-auto block h-4 w-16 ${BAR}`} />
       </td>
     </tr>
   );
 }
 
-/** Skeleton matching the real card geometry. */
+/** Skeleton matching card geometry */
 export function DownMonitorCardSkeleton() {
   return (
-    <li
-      aria-hidden
-      className={`border-b border-slate-200 p-4 last:border-b-0 dark:border-slate-800 ${ROW_SURFACE}`}
-    >
+    <article aria-hidden className="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200/70 dark:border-slate-800 shadow-ios">
       <div className="flex items-start justify-between gap-2">
-        <span className={`block h-6 w-48 ${BAR}`} />
-        <span className={`block h-6 w-24 ${BAR}`} />
+        <div className="flex items-center gap-3">
+          <div className={`w-8 h-8 rounded-full ${BAR}`} />
+          <div className="space-y-1">
+            <span className={`block h-3.5 w-28 ${BAR}`} />
+            <span className={`block h-2.5 w-20 ${BAR}`} />
+          </div>
+        </div>
+        <span className={`block h-4 w-12 rounded-full ${BAR}`} />
       </div>
-      <div className="mt-3 grid grid-cols-2 gap-2">
-        <span className={`block h-5 w-24 ${BAR}`} />
-        <span className={`block h-5 w-16 ${BAR}`} />
+      <div className="mt-3 pt-2.5 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between">
+        <span className={`block h-3 w-32 ${BAR}`} />
+        <span className={`block h-3 w-12 ${BAR}`} />
       </div>
-      <span className={`mt-2 block h-4 w-40 ${BAR}`} />
-      <span className={`mt-3 block h-4 w-full ${BAR}`} />
-      <span className={`mt-2 block h-4 w-2/3 ${BAR}`} />
-    </li>
+    </article>
   );
 }

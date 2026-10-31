@@ -1,6 +1,14 @@
 import type { CountState } from '../lib/types';
 import type { ErrorCategory } from '../lib/errors';
 import type { CategoryCount } from '../hooks/useFilters';
+import {
+  UpplyLogoIcon,
+  DashboardIcon,
+  MonitorsIcon,
+  StatusPagesIcon,
+  TeamsIcon,
+  SettingsIcon,
+} from './icons';
 
 interface Props {
   count: CountState;
@@ -9,87 +17,119 @@ interface Props {
   onToggle: (c: ErrorCategory) => void;
 }
 
-/* Big number wears the same verified badge tokens as the REFUSED/OTHER categories:
-   red when something is down, slate when it isn't or when a failed first load
-   means claiming a number would lie. */
-const TONE = {
-  alarm: 'text-red-800 dark:text-red-300',
-  neutral: 'text-slate-800 dark:text-slate-200',
-} as const;
-
-/**
- * Direction B rail: the summary count and the error-type filters. At < 45rem it
- * re-flows into a horizontal chip band above the list — same content, no drawer.
- * The mockup hid the count on narrow screens; the port keeps it visible (first
- * cell of the band) because on this app the count *is* the payload.
- */
 export function FilterRail({ count, cats, active, onToggle }: Props) {
-  const tone = count.state === 'count' && count.total > 0 ? TONE.alarm : TONE.neutral;
-
   return (
     <aside
-      aria-label="Summary and filters"
-      className="flex w-full items-center gap-3 overflow-x-auto pb-1 wide:sticky wide:top-16 wide:w-60 wide:flex-col wide:items-stretch wide:self-start wide:overflow-visible wide:pb-0"
+      aria-label="Sidebar navigation"
+      className="w-full wide:w-[240px] lg:wide:w-[260px] bg-white dark:bg-slate-900 border-b wide:border-b-0 wide:border-r border-slate-100/90 dark:border-slate-800/80 p-5 sm:p-7 flex flex-col justify-between shrink-0"
+      data-purpose="sidebar-navigation"
     >
-      <div className="flex shrink-0 items-baseline gap-2">
-        {count.state === 'skeleton' ? (
-          <>
-            <span
-              aria-hidden
-              className="block h-8 w-10 animate-pulse rounded-md bg-slate-200 dark:bg-slate-800"
-            />
-            <span className="sr-only">Loading monitor status</span>
-          </>
-        ) : (
-          <>
-            <span
-              className={`font-mono text-2xl leading-8 font-semibold tabular-nums ${tone}`}
+      <div className="space-y-6 wide:space-y-8">
+        {/* Logo Container */}
+        <div className="flex items-center gap-3 px-1 pt-1" data-purpose="logo-container">
+          <div className="w-10 h-10 rounded-2xl bg-brand-500 flex items-center justify-center text-white shadow-md shadow-brand-500/25">
+            <UpplyLogoIcon className="w-6 h-6 fill-current" />
+          </div>
+          <span className="text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white">
+            Upply
+          </span>
+        </div>
+
+        {/* Navigation Menu Links */}
+        <nav className="flex wide:flex-col gap-1.5 overflow-x-auto no-scrollbar font-medium" data-purpose="navigation-links">
+          {/* Active Item: Dashboard */}
+          <a
+            href="#dashboard"
+            className="flex items-center gap-3 px-4 py-2.5 rounded-full bg-brand-500 text-white shadow-pill font-semibold transition-all whitespace-nowrap"
+          >
+            <DashboardIcon className="w-4 h-4 shrink-0" />
+            <span className="text-sm">Dashboard</span>
+            {count.state === 'count' && count.total > 0 && (
+              <span className="ml-auto inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-white/20 text-white">
+                {count.total}
+              </span>
+            )}
+          </a>
+
+          {/* Monitors */}
+          <a
+            href="#monitors"
+            className="flex items-center gap-3 px-4 py-2.5 rounded-full text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all group whitespace-nowrap"
+          >
+            <MonitorsIcon className="w-4 h-4 text-slate-400 group-hover:text-slate-700 dark:group-hover:text-slate-200 transition shrink-0" />
+            <span className="text-sm">Monitors</span>
+          </a>
+
+          {/* Status Pages */}
+          <a
+            href="#status-pages"
+            className="flex items-center gap-3 px-4 py-2.5 rounded-full text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all group whitespace-nowrap"
+          >
+            <StatusPagesIcon className="w-4 h-4 text-slate-400 group-hover:text-slate-700 dark:group-hover:text-slate-200 transition shrink-0" />
+            <span className="text-sm">Status Pages</span>
+          </a>
+
+          {/* Teams */}
+          <a
+            href="#teams"
+            className="flex items-center gap-3 px-4 py-2.5 rounded-full text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all group whitespace-nowrap"
+          >
+            <TeamsIcon className="w-4 h-4 text-slate-400 group-hover:text-slate-700 dark:group-hover:text-slate-200 transition shrink-0" />
+            <span className="text-sm">Teams</span>
+          </a>
+
+          {/* Settings */}
+          <a
+            href="#settings"
+            className="flex items-center gap-3 px-4 py-2.5 rounded-full text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all group whitespace-nowrap"
+          >
+            <SettingsIcon className="w-4 h-4 text-slate-400 group-hover:text-slate-700 dark:group-hover:text-slate-200 transition shrink-0" />
+            <span className="text-sm">Settings</span>
+          </a>
+        </nav>
+
+        {/* Error Type Filter Chips */}
+        {cats.length > 0 && (
+          <div className="pt-2 border-t border-slate-100 dark:border-slate-800/80">
+            <h2 className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-2.5 px-2">
+              Filter by Error
+            </h2>
+            <div
+              role="group"
+              aria-label="Filter by error type"
+              className="flex wide:flex-col gap-1.5 overflow-x-auto no-scrollbar"
             >
-              {count.state === 'unknown' ? '–' : count.total}
-            </span>
-            <span className="text-xs leading-4 text-slate-600 dark:text-slate-400">
-              monitors down
-            </span>
-          </>
+              {cats.map((c) => {
+                const on = active.has(c.category);
+                return (
+                  <button
+                    key={c.category}
+                    type="button"
+                    aria-pressed={on}
+                    onClick={() => onToggle(c.category)}
+                    className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all whitespace-nowrap ${
+                      on
+                        ? 'bg-brand-50 text-brand-600 dark:bg-brand-500/20 dark:text-brand-300 ring-1 ring-brand-500/30'
+                        : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50'
+                    }`}
+                  >
+                    <span aria-hidden className={`size-2 shrink-0 rounded-full ${c.dotClass}`} />
+                    <span className="truncate max-w-[130px]">{c.label}</span>
+                    <span className="ml-auto font-mono text-[11px] tabular-nums opacity-70">
+                      {c.count}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
         )}
       </div>
 
-      {cats.length > 0 && (
-        <>
-          <hr className="hidden w-full border-0 border-t border-slate-200 dark:border-slate-800 wide:block" />
-          <h2 className="shrink-0 self-center text-xs leading-4 font-semibold text-slate-600 wide:self-start dark:text-slate-400">
-            Error type
-          </h2>
-          <div
-            role="group"
-            aria-label="Filter by error type"
-            className="flex shrink-0 gap-2 wide:w-full wide:flex-col"
-          >
-            {cats.map((c) => {
-              const on = active.has(c.category);
-              return (
-                <button
-                  key={c.category}
-                  type="button"
-                  aria-pressed={on}
-                  onClick={() => onToggle(c.category)}
-                  className={`inline-flex min-h-11 shrink-0 items-center gap-2 rounded-md border px-2 text-xs leading-4 transition-colors wide:w-full ${
-                    on
-                      ? 'border-slate-300 bg-white text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-50'
-                      : 'border-transparent text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800'
-                  }`}
-                >
-                  <span aria-hidden className={`size-2 shrink-0 rounded-full ${c.dotClass}`} />
-                  <span className="whitespace-nowrap">{c.label}</span>
-                  <span className="ml-auto font-mono tabular-nums text-slate-600 dark:text-slate-400">
-                    {c.count}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-        </>
-      )}
+      {/* Footer Info */}
+      <div className="hidden wide:block pt-6 border-t border-slate-100 dark:border-slate-800 text-xs text-slate-400 dark:text-slate-500">
+        v2.4.0 • Upply Pro
+      </div>
     </aside>
   );
 }
