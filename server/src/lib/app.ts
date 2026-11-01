@@ -1,5 +1,5 @@
-import express, { type Request, type Response } from 'express';
-import type { DownMonitor, DownMonitorsResponse, ApiErrorResponse } from '@shared/index.ts';
+import express, { type Request, type Response } from "express";
+import type { DownMonitor, DownMonitorsResponse, ApiErrorResponse, QuickStats } from "@shared/index.ts";
 
 /** Cache TTL: 5s prevents hammering the DB on fast auto-refresh cycles */
 const CACHE_TTL_MS = 5_000;
@@ -11,8 +11,13 @@ interface CacheEntry {
 
 let cache: CacheEntry | null = null;
 
+export interface LoadedData {
+  monitors: DownMonitor[];
+  stats: QuickStats;
+}
+
 /** Loader may be sync (sqlite) or async (mysql). */
-export type MonitorLoader = () => Promise<DownMonitor[]> | DownMonitor[];
+export type MonitorLoader = () => Promise<LoadedData> | LoadedData;
 
 /**
  * Cached loader that deduplicates concurrent requests within the TTL window.
@@ -24,7 +29,7 @@ async function loadMonitors(loader: MonitorLoader): Promise<DownMonitorsResponse
     return cache.payload;
   }
 
-  let data: DownMonitor[];
+  let data: LoadedData;
   try {
     data = await loader();
   } catch (err) {
@@ -32,38 +37,42 @@ async function loadMonitors(loader: MonitorLoader): Promise<DownMonitorsResponse
     throw err;
   }
 
-  const payload: DownMonitorsResponse = { total: data.length, data };
+  const payload: DownMonitorsResponse = {
+    total: data.monitors.length,
+    data: data.monitors,
+    stats: data.stats,
+  };
   cache = { at: now, payload };
   return payload;
 }
 
 export function createApp(loader: MonitorLoader) {
   const app = express();
-  app.disable('x-powered-by');
+  app.disable("x-powered-by");
 
   // CORS — allows the frontend dev server origin, defaults to wildcard
   app.use((req, res, next) => {
-    res.setHeader('Access-Control-Allow-Origin', process.env.FRONTEND_ORIGIN ?? '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-    if (req.method === 'OPTIONS') {
+    res.setHeader("Access-Control-Allow-Origin", process.env.FRONTEND_ORIGIN ?? "*");
+    res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+    if (req.method === "OPTIONS") {
       res.sendStatus(204);
       return;
     }
     next();
   });
 
-  app.get('/api/down-monitors', async (_req: Request, res: Response) => {
+  app.get("/api/down-monitors", async (_req: Request, res: Response) => {
     try {
       res.json(await loadMonitors(loader));
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Unknown error';
+      const message = err instanceof Error ? err.message : "Unknown error";
       const body: ApiErrorResponse = { error: `Failed to load monitors: ${message}` };
       res.status(500).json(body);
     }
   });
 
-  app.get('/api/health', (_req: Request, res: Response) => {
+  app.get("/api/health", (_req: Request, res: Response) => {
     res.json({ ok: true, uptime: process.uptime() });
   });
 

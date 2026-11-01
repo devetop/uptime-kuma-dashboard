@@ -12,7 +12,7 @@ import { MoreIcon, ChevronRightIcon, FigmaIcon } from './components/icons';
 
 export function App() {
   const now = useTicker(1_000);
-  const { data, total, loading, error, reload } = useDownMonitors(5_000);
+  const { data, total, stats, loading, error, reload } = useDownMonitors(5_000);
   const { isDark, toggleTheme } = useTheme();
 
   const [filter, setFilter] = useState('');
@@ -68,9 +68,6 @@ export function App() {
   };
 
   // Metrics calculation
-  const totalMonitors = 42;
-  const statusPagesCount = 4;
-  const incidentsCount = total > 0 ? total : 12;
   const globalUptime = total === 0 ? '99.98%' : total === 1 ? '99.28%' : '98.45%';
 
   return (
@@ -100,47 +97,47 @@ export function App() {
             {/* KPI Statistics Overview (4 Cards) */}
             <section aria-label="Quick statistics overview" data-purpose="kpi-metrics-grid">
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                {/* Stat 1: Activity Monitoring */}
+                {/* Stat 1: Up */}
                 <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl p-5 shadow-card hover:shadow-md transition">
                   <span className="text-xs font-semibold text-slate-400 dark:text-slate-500 tracking-wide block mb-3">
-                    Activity Monitoring
+                    Up
                   </span>
                   <div className="flex items-center gap-3.5">
-                    <div className="w-8 h-8 rounded-full bg-orange-50 dark:bg-orange-950/60 flex items-center justify-center shrink-0">
-                      <span className="w-3.5 h-3.5 rounded-full bg-orange-400 ring-4 ring-orange-100 dark:ring-orange-900/40" />
+                    <div className="w-8 h-8 rounded-full bg-emerald-50 dark:bg-emerald-950/60 flex items-center justify-center shrink-0">
+                      <span className="w-3.5 h-3.5 rounded-full bg-emerald-500 ring-4 ring-emerald-100 dark:ring-emerald-900/40" />
                     </div>
                     <span className="text-3xl font-extrabold text-slate-800 dark:text-white tracking-tight">
-                      {totalMonitors}
+                      {stats?.up ?? '—'}
                     </span>
                   </div>
                 </div>
 
-                {/* Stat 2: Status Pages */}
+                {/* Stat 2: Down */}
                 <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl p-5 shadow-card hover:shadow-md transition">
                   <span className="text-xs font-semibold text-slate-400 dark:text-slate-500 tracking-wide block mb-3">
-                    Status Pages
-                  </span>
-                  <div className="flex items-center gap-3.5">
-                    <div className="w-8 h-8 rounded-full bg-blue-50 dark:bg-blue-950/60 flex items-center justify-center shrink-0">
-                      <span className="w-3.5 h-3.5 rounded-full bg-blue-500 ring-4 ring-blue-100 dark:ring-blue-900/40" />
-                    </div>
-                    <span className="text-3xl font-extrabold text-slate-800 dark:text-white tracking-tight">
-                      {statusPagesCount}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Stat 3: Number of Incidents */}
-                <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl p-5 shadow-card hover:shadow-md transition">
-                  <span className="text-xs font-semibold text-slate-400 dark:text-slate-500 tracking-wide block mb-3">
-                    Number of Incidents
+                    Down
                   </span>
                   <div className="flex items-center gap-3.5">
                     <div className="w-8 h-8 rounded-full bg-rose-50 dark:bg-rose-950/60 flex items-center justify-center shrink-0">
-                      <span className="w-3.5 h-3.5 rounded-full bg-rose-400 ring-4 ring-rose-100 dark:ring-rose-900/40" />
+                      <span className="w-3.5 h-3.5 rounded-full bg-rose-500 ring-4 ring-rose-100 dark:ring-rose-900/40" />
                     </div>
                     <span className="text-3xl font-extrabold text-slate-800 dark:text-white tracking-tight">
-                      {incidentsCount}
+                      {stats?.down ?? '—'}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Stat 3: Paused */}
+                <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl p-5 shadow-card hover:shadow-md transition">
+                  <span className="text-xs font-semibold text-slate-400 dark:text-slate-500 tracking-wide block mb-3">
+                    Paused
+                  </span>
+                  <div className="flex items-center gap-3.5">
+                    <div className="w-8 h-8 rounded-full bg-amber-50 dark:bg-amber-950/60 flex items-center justify-center shrink-0">
+                      <span className="w-3.5 h-3.5 rounded-full bg-amber-500 ring-4 ring-amber-100 dark:ring-amber-900/40" />
+                    </div>
+                    <span className="text-3xl font-extrabold text-slate-800 dark:text-white tracking-tight">
+                      {stats?.pause ?? '—'}
                     </span>
                   </div>
                 </div>
