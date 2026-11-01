@@ -17,6 +17,7 @@ export function useDownMonitors(pollMs = 5_000): Result<MonitorView> & {
     error: null,
     data: [],
     total: 0,
+    stats: null,
   });
 
   const load = useCallback(async () => {
@@ -26,7 +27,7 @@ export function useDownMonitors(pollMs = 5_000): Result<MonitorView> & {
     );
     try {
       const res = await fetchDownMonitors();
-      setResult({ state: 'loaded', loading: false, error: null, data: res.data, total: res.total });
+      setResult({ state: 'loaded', loading: false, error: null, data: res.data, total: res.total, stats: res.stats });
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Unknown error';
       setResult((prev) => ({

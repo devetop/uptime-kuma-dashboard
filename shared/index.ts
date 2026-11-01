@@ -18,10 +18,21 @@ export interface DownMonitor {
   msg: string | null;
 }
 
+export interface QuickStats {
+  up: number;
+  down: number;
+  pending: number;
+  maintenance: number;
+  unknown: number;
+  pause: number;
+  active: number;
+}
+
 /** GET /api/down-monitors successful response */
 export interface DownMonitorsResponse {
   total: number;
   data: DownMonitor[];
+  stats: QuickStats;
 }
 
 /** GET /api/down-monitors error response */

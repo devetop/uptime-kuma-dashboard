@@ -1,4 +1,4 @@
-import type { DownMonitor } from '@shared/index.ts';
+import type { DownMonitor, QuickStats } from '@shared/index.ts';
 
 /** Branded monitor ID: not interchangeable with timestamps, totals or array indices. */
 declare const monitorIdBrand: unique symbol;
@@ -16,6 +16,8 @@ interface Snapshot<T> {
   data: T[];
   /** Count reported by the last successful response. */
   total: number;
+  /** Quick stats from DB aggregate (null before first response). */
+  stats: QuickStats | null;
 }
 
 export type Result<T> =
