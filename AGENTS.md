@@ -4,12 +4,28 @@
 - TypeScript strict di backend & frontend
 - Backend: Express 5 + TypeScript (Node.js)
 - Frontend: React 19 + Vite 6 + TypeScript + Tailwind CSS 4
+- Tipe domain bersama: `shared/index.ts` (satu-satunya sumber kebenaran)
 
 ## Database (Uptime Kuma)
 - Schema: monitor, heartbeat, stat_minutely
 - Koneksi via env var: DB_TYPE, DB_HOST/DB_PORT/DB_NAME/DB_USER/DB_PASS (mariadb/mysql) atau DB_PATH (sqlite)
 - Proyek ini READ-ONLY terhadap DB — jangan pernah ubah schema
 - Kredensial DB **jangan pernah** dihardcode ke dalam image
+
+## Kontrak API & Tipe Bersama
+- Semua tipe domain (`DownMonitor`, `QuickStats`, `DownMonitorsResponse`) ada di `shared/index.ts`; server dan frontend mengimpornya via `@shared/index.ts`. Jangan menduplikasi bentuk response.
+- `GET /api/down-monitors` mengembalikan `{ total, data, stats }`; `total` = panjang `data`, `stats` = agregat cepat per status monitor.
+- `QuickStats` (`up`, `down`, `pending`, `maintenance`, `unknown`, `pause`, `active`) dihitung `QUICK_STATS_SQL` di `server/src/lib/sql.ts`: status heartbeat `1=up, 0=down, 2=pending, 3=maintenance`, selain itu `unknown`; `active` dipropagasi dari parent ke child lewat recursive CTE (child non-aktif bila parent non-aktif).
+- `QUICK_STATS_SQL` dan `DOWN_MONITORS_SQL` harus portabel untuk MySQL/MariaDB dan SQLite karena kedua bridge memakainya. `query-quick-statistic.sql` di root hanya referensi dialek MySQL, bukan query yang dijalankan server.
+- Nilai mentah DB dinormalisasi di `server/src/lib/mappers.ts` (`Number(...)`, fallback `0`/`""`/`null`); jangan casting mentah ke tipe domain.
+- Response di-cache **5 detik**; bila loader gagal, sajikan cache lama, error 500 hanya jika cache kosong. Kedua bridge wajib mengembalikan `LoadedData = { monitors, stats }`.
+- Field baru pada response wajib ditambahkan di tiga tempat: `shared/index.ts`, guard `isDownMonitorsResponse` (`frontend/src/lib/api.ts`), dan `frontend/src/lib/api.test.ts`.
+
+## Konvensi Frontend (State & Validasi)
+- Trust boundary: response `fetch` divalidasi runtime (`isRecord`, `isValidStats`, `isDownMonitorsResponse`) sebelum masuk React. Jangan `as` hasil `res.json()`.
+- ID monitor memakai brand `MonitorId` (`frontend/src/lib/types.ts`); konversi hanya di `toMonitorView` setelah validasi.
+- State UI memakai discriminated union (`Result`, `LiveSlot`, `CountState`), bukan kombinasi boolean flag.
+- Self-check tanpa framework: `node --experimental-strip-types frontend/src/lib/api.test.ts` (assert manual, tanpa `node:assert` karena tsconfig frontend tidak memuat tipe Node).
 
 ## Containerization (Docker)
 ### Arsitektur: Full-Stack (Frontend + Backend)
@@ -80,13 +96,13 @@ Proyek ini dipaketkan sebagai dua service dalam satu `docker-compose.yml`:
 - Toggle di `frontend/src/components/Header.tsx` (state: `frontend/src/hooks/useTheme.ts`): ikon moon/sun dengan `aria-label`, simpan pilihan ke `localStorage.theme`, ikuti perubahan sistem (`matchMedia` listener) hanya bila user belum memilih manual.
 - Setiap class warna/background/border/placeholder WAJIB punya pasangan `dark:` — tidak ada elemen yang hanya terang.
 - Badge status (`frontend/src/lib/errors.ts`): tiap `badgeClass` wajib punya pasangan gelap `bg-<warna>-900/30 text-<warna>-300 border-<warna>-500`.
-- Validasi: `cd frontend && npx tsc -p tsconfig.app.json --noEmit && npx vite build` harus lolos.
+- Validasi: `cd frontend && npx tsc -p tsconfig.app.json --noEmit && npx vite build` harus lolos; bila menyentuh `api.ts`/tipe response, jalankan juga `node --experimental-strip-types frontend/src/lib/api.test.ts`.
 
 ## Aturan (ditingkatkan)
 - Jangan tambah dependency tanpa izin
 - Jangan service di luar yang diminta (termasuk database)
 - Jangan tambah fitur di luar yang diminta
-- Stop & tanya sebelum: hapus file, ubah schema DB, install dependency new, install dependency baru, docker push ke registry mana pun, atau commit/push ke git
+- Stop & tanya sebelum: hapus file, ubah schema DB, install dependency baru, docker push ke registry mana pun, atau commit/push ke git
 - Image harus dibangun dengan `docker compose build` atau `docker compose up --build`
 - Jalankan `docker compose up` untuk menjalankan keduanya sekaligus
 - Firewall / isolation: jalankan container sebagai user non-root
