@@ -21,7 +21,7 @@ export function FilterRail({ count, cats, active, onToggle }: Props) {
   return (
     <aside
       aria-label="Sidebar navigation"
-      className="w-full wide:w-[240px] lg:wide:w-[260px] bg-white dark:bg-slate-900 border-b wide:border-b-0 wide:border-r border-slate-100/90 dark:border-slate-800/80 p-5 sm:p-7 flex flex-col justify-between shrink-0"
+      className="w-full wide:w-[240px] lg:wide:w-[260px] bg-white dark:bg-slate-900 border-b wide:border-b-0 wide:border-r border-slate-100 dark:border-slate-800 p-5 sm:p-7 flex flex-col justify-between shrink-0"
       data-purpose="sidebar-navigation"
     >
       <div className="space-y-6 wide:space-y-8">

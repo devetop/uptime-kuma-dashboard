@@ -26,7 +26,7 @@ export function MonitorRecords({
 
       {firstLoad ? (
         <>
-          <div className="hidden wide:block border border-slate-100 dark:border-slate-800 rounded-3xl overflow-hidden shadow-card bg-white dark:bg-slate-900">
+          <div className="hidden wide:block border border-slate-100 dark:border-slate-800 rounded-2xl overflow-hidden bg-white dark:bg-slate-900">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
                 <thead>
@@ -53,12 +53,12 @@ export function MonitorRecords({
           </div>
         </>
       ) : rows.length === 0 ? (
-        <div className="border border-slate-100 dark:border-slate-800 rounded-3xl overflow-hidden shadow-card bg-white dark:bg-slate-900 p-6">
+        <div className="border border-slate-100 dark:border-slate-800 rounded-2xl overflow-hidden bg-white dark:bg-slate-900 p-6">
           <EmptyState showClear={filtersOn} onClear={onClearFilter} message={emptyMessage} />
         </div>
       ) : (
         <>
-          <div className="hidden wide:block border border-slate-100 dark:border-slate-800 rounded-3xl overflow-hidden shadow-card bg-white dark:bg-slate-900">
+          <div className="hidden wide:block border border-slate-100 dark:border-slate-800 rounded-2xl overflow-hidden bg-white dark:bg-slate-900">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
                 <thead>

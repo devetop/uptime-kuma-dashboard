@@ -70,9 +70,9 @@ export function App() {
   const globalUptime = total === 0 ? '99.98%' : total === 1 ? '99.28%' : '98.45%';
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-3 sm:p-6 lg:p-10 selection:bg-brand-100 selection:text-brand-700 bg-[#DDE7F6] dark:bg-[#0B132B] transition-colors">
-      {/* Main Dashboard Frame Container matching 1440px desktop frame */}
-      <div className="w-full max-w-[1440px] bg-white dark:bg-slate-900 rounded-[36px] shadow-2xl border border-white/60 dark:border-slate-800/80 overflow-hidden flex flex-col wide:flex-row min-h-[920px]">
+    <div className="min-h-screen w-full bg-white dark:bg-slate-900 selection:bg-brand-100 selection:text-brand-700 transition-colors">
+      {/* Main Dashboard Frame Container edge-to-edge */}
+      <div className="w-full min-h-screen bg-white dark:bg-slate-900 flex flex-col wide:flex-row">
         {/* Left Navigation Sidebar */}
         <FilterRail count={count} cats={cats} active={types.active} onToggle={types.toggle} />
 
@@ -97,7 +97,7 @@ export function App() {
             <section aria-label="Quick statistics overview" data-purpose="kpi-metrics-grid">
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 {/* Stat 1: Up */}
-                <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl p-5 shadow-card hover:shadow-md transition">
+                <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl p-5 hover:border-slate-200 dark:hover:border-slate-700 transition">
                   <span className="text-xs font-semibold text-slate-400 dark:text-slate-500 tracking-wide block mb-3">
                     Up
                   </span>
@@ -112,7 +112,7 @@ export function App() {
                 </div>
 
                 {/* Stat 2: Down */}
-                <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl p-5 shadow-card hover:shadow-md transition">
+                <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl p-5 hover:border-slate-200 dark:hover:border-slate-700 transition">
                   <span className="text-xs font-semibold text-slate-400 dark:text-slate-500 tracking-wide block mb-3">
                     Down
                   </span>
@@ -127,7 +127,7 @@ export function App() {
                 </div>
 
                 {/* Stat 3: Paused */}
-                <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl p-5 shadow-card hover:shadow-md transition">
+                <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl p-5 hover:border-slate-200 dark:hover:border-slate-700 transition">
                   <span className="text-xs font-semibold text-slate-400 dark:text-slate-500 tracking-wide block mb-3">
                     Paused
                   </span>
@@ -142,7 +142,7 @@ export function App() {
                 </div>
 
                 {/* Stat 4: Global Uptime */}
-                <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl p-5 shadow-card hover:shadow-md transition">
+                <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl p-5 hover:border-slate-200 dark:hover:border-slate-700 transition">
                   <span className="text-xs font-semibold text-slate-400 dark:text-slate-500 tracking-wide block mb-3">
                     Global Uptime
                   </span>

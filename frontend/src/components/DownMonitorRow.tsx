@@ -105,7 +105,7 @@ export function DownMonitorCard({ monitor, relativeTime, absoluteLabel }: Props)
   return (
     <article
       tabIndex={0}
-      className="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200/70 dark:border-slate-800 shadow-ios transition-colors hover:border-slate-300 dark:hover:border-slate-700"
+      className="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200/70 dark:border-slate-800 transition-colors hover:border-slate-300 dark:hover:border-slate-700"
     >
       <div className="flex items-start justify-between gap-2">
         <div className="flex items-center gap-3">
@@ -171,7 +171,7 @@ export function DownMonitorRowSkeleton() {
 /** Skeleton matching card geometry */
 export function DownMonitorCardSkeleton() {
   return (
-    <article aria-hidden className="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200/70 dark:border-slate-800 shadow-ios">
+    <article aria-hidden className="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200/70 dark:border-slate-800">
       <div className="flex items-start justify-between gap-2">
         <div className="flex items-center gap-3">
           <div className={`w-8 h-8 rounded-full ${BAR}`} />
