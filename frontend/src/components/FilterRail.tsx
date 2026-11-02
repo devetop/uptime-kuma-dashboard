@@ -31,7 +31,7 @@ export function FilterRail({ count, cats, active, onToggle }: Props) {
             <UpplyLogoIcon className="w-6 h-6 fill-current" />
           </div>
           <span className="text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white">
-            Upply
+            Down Monitors
           </span>
         </div>
 
@@ -128,7 +128,7 @@ export function FilterRail({ count, cats, active, onToggle }: Props) {
 
       {/* Footer Info */}
       <div className="hidden wide:block pt-6 border-t border-slate-100 dark:border-slate-800 text-xs text-slate-400 dark:text-slate-500">
-        v2.4.0 • Upply Pro
+        v2.4.0 • Down Monitors
       </div>
     </aside>
   );
