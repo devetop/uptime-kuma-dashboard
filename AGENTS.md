@@ -26,6 +26,8 @@
 - ID monitor memakai brand `MonitorId` (`frontend/src/lib/types.ts`); konversi hanya di `toMonitorView` setelah validasi.
 - State UI memakai discriminated union (`Result`, `LiveSlot`, `CountState`), bukan kombinasi boolean flag.
 - Self-check tanpa framework: `node --experimental-strip-types frontend/src/lib/api.test.ts` (assert manual, tanpa `node:assert` karena tsconfig frontend tidak memuat tipe Node).
+- Filter state dikelola hook `useFilters` (`frontend/src/hooks/useFilters.ts`); perubahan logika filter wajib lulus `node --experimental-strip-types frontend/src/hooks/useFilters.test.ts`.
+- Ikon custom di `frontend/src/components/icons.tsx`; hapus ikon yang tidak terpakai bersama pemakainya (jangan sisakan ekspor mati).
 
 ## Containerization (Docker)
 ### Arsitektur: Full-Stack (Frontend + Backend)
