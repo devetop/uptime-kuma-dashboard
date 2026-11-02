@@ -46,7 +46,7 @@ function ServiceAvatar({ name }: { name: string }) {
 
 /**
  * Wide-viewport row (>= 45rem) matching "Latest Alerts" table in redesign.png:
- * Columns: Check (Service Avatar + Name + URL), Time, Duration, Notified (Slack hook / Message), Action (Details / Badge)
+ * Columns: Check (Service Avatar + Name + URL), Time, Duration, Message, Error (Badge)
  */
 export function DownMonitorRow({ monitor, relativeTime, absoluteLabel }: Props) {
   const { type, iso, ping, message } = display(monitor);
@@ -81,33 +81,18 @@ export function DownMonitorRow({ monitor, relativeTime, absoluteLabel }: Props) 
         Ongoing for {relativeTime.replace(' ago', '')}
       </td>
 
-      {/* Notified column */}
+      {/* Message column */}
       <td className={`${CELL} text-slate-500 dark:text-slate-400 whitespace-nowrap`}>
-        <div className="flex items-center gap-1.5 max-w-[220px] truncate">
-          <SlackIcon className="text-slate-400 shrink-0" />
-          <span className="truncate">
-            Slack to <span className="font-semibold text-slate-700 dark:text-slate-200">#notifyme</span>
-            <span className="text-slate-400 text-[10px] ml-1">({type.label})</span>
-          </span>
-        </div>
-        <p className="text-[10px] text-slate-400 dark:text-slate-500 truncate max-w-[220px] mt-0.5 font-mono">
+        <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate max-w-[220px] mt-0.5 font-mono">
           {message}
         </p>
       </td>
 
-      {/* Action column */}
+      {/* Error column */}
       <td className={`${CELL} text-right whitespace-nowrap`}>
-        <div className="flex items-center justify-end gap-2">
-          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border ${type.badgeClass}`}>
-            {type.label}
-          </span>
-          <a
-            href={`#details-${monitor.monitor_id}`}
-            className="text-brand-600 dark:text-brand-400 hover:text-brand-700 font-semibold text-xs transition"
-          >
-            Details
-          </a>
-        </div>
+        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border ${type.badgeClass}`}>
+          {type.label}
+        </span>
       </td>
     </tr>
   );
@@ -144,12 +129,6 @@ export function DownMonitorCard({ monitor, relativeTime, absoluteLabel }: Props)
           <SlackIcon className="text-slate-400 shrink-0" />
           <span className="truncate">Slack: #notifyme ({ping})</span>
         </div>
-        <a
-          href={`#details-${monitor.monitor_id}`}
-          className="font-semibold text-brand-600 dark:text-brand-400 hover:underline shrink-0"
-        >
-          Details
-        </a>
       </div>
       <p className="mt-2 text-[10px] font-mono text-slate-500 dark:text-slate-400 break-words bg-slate-50 dark:bg-slate-800/50 p-1.5 rounded-lg">
         {message}
@@ -205,7 +184,6 @@ export function DownMonitorCardSkeleton() {
       </div>
       <div className="mt-3 pt-2.5 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between">
         <span className={`block h-3 w-32 ${BAR}`} />
-        <span className={`block h-3 w-12 ${BAR}`} />
       </div>
     </article>
   );

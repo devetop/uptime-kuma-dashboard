@@ -20,17 +20,9 @@ export function MonitorRecords({
 }: MonitorListProps) {
   return (
     <section aria-label="Latest incident alerts table" data-purpose="latest-alerts-table" className="space-y-3">
-      <div className="flex items-center justify-between">
-        <h2 className="text-base font-bold text-slate-900 dark:text-white">
-          Latest Alerts
-        </h2>
-        <a
-          href="#alerts"
-          className="text-xs font-semibold text-brand-600 dark:text-brand-400 hover:text-brand-700 transition"
-        >
-          See All
-        </a>
-      </div>
+      <h2 className="text-base font-bold text-slate-900 dark:text-white">
+        Latest Alerts
+      </h2>
 
       {firstLoad ? (
         <>
@@ -42,8 +34,8 @@ export function MonitorRecords({
                     <th className="py-3.5 px-6">Check</th>
                     <th className="py-3.5 px-6">Time</th>
                     <th className="py-3.5 px-6">Duration</th>
-                    <th className="py-3.5 px-6">Notified</th>
-                    <th className="py-3.5 px-6 text-right">Action</th>
+                    <th className="py-3.5 px-6">Message</th>
+                    <th className="py-3.5 px-6 text-right">Error</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -74,8 +66,8 @@ export function MonitorRecords({
                     <th scope="col" className="py-3.5 px-6">Check</th>
                     <th scope="col" className="py-3.5 px-6">Time</th>
                     <th scope="col" className="py-3.5 px-6">Duration</th>
-                    <th scope="col" className="py-3.5 px-6">Notified</th>
-                    <th scope="col" className="py-3.5 px-6 text-right">Action</th>
+                    <th scope="col" className="py-3.5 px-6">Message</th>
+                    <th scope="col" className="py-3.5 px-6 text-right">Error</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
