@@ -58,10 +58,10 @@ export function DownMonitorRow({ monitor, relativeTime, absoluteLabel }: Props) 
     >
       {/* Check column: Icon + Service Name + URL */}
       <td className={CELL}>
-        <div className="flex items-center gap-3">
+        <div className="flex items-start gap-3">
           <ServiceAvatar name={monitor.monitor_name} />
           <div className="min-w-0">
-            <p className="font-bold text-slate-900 dark:text-white leading-snug truncate max-w-[180px]">
+            <p className="font-bold text-slate-900 dark:text-white leading-snug break-words">
               {monitor.monitor_name}
             </p>
             <p className="text-[10px] text-slate-400 truncate max-w-[180px]">

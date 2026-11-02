@@ -1,6 +1,6 @@
 import type { LiveSlot } from '../lib/types';
 import { LiveState } from './LiveState';
-import { MoonIcon, RefreshIcon, SunIcon, StarIcon } from './icons';
+import { MoonIcon, RefreshIcon, SunIcon } from './icons';
 
 interface Props {
   slot: LiveSlot;
@@ -36,7 +36,6 @@ export function Header({ slot, loading, isDark, onRefresh, onToggleTheme }: Prop
           aria-label="Refresh monitors"
           className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-brand-50 hover:bg-brand-100 text-brand-600 dark:bg-brand-500/10 dark:text-brand-400 dark:hover:bg-brand-500/20 font-semibold text-xs transition active:scale-95 disabled:opacity-50"
         >
-          <StarIcon className="w-3.5 h-3.5 fill-brand-600 dark:fill-brand-400" />
           <span>{loading ? 'Refreshing...' : 'Refresh monitors'}</span>
           <RefreshIcon spin={loading} className="w-3.5 h-3.5 ml-0.5 opacity-70" />
         </button>
