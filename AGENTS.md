@@ -32,7 +32,9 @@
 ## Frontend (Layout & Data Dashboard)
 - Breakpoint custom `wide` (bukan `lg`/`xl`) didefinisikan di `frontend/src/index.css`: `@custom-variant wide (@media (width >= 45rem));`. Tabel monitor tampil di `wide:block`, kartu di `wide:hidden`.
 - KPI grid di `frontend/src/App.tsx`: 4 kartu (`Up`, `Down`, `Paused`, `Global Uptime`). Hanya `Up`/`Down`/`Paused` diambil dari `stats`; `Global Uptime` masih nilai mock (hardcode di `App.tsx`), bukan dari API. Ketika nilai ini dipindah ke backend, tambahkan field di `shared/index.ts` + guard + test sesuai aturan tiga tempat di atas.
-- Judul dashboard dan teks header bersifat statis (tidak dari API).
+- Judul dashboard dan teks header bersifat statis (tidak dari API), termasuk logo, nav sidebar, dan versi footer `v2.4.0` di `FilterRail.tsx`. Teks statis ini murni dekoratif — bukan fitur navigasi; jangan tambah rute/state tanpa diminta.
+- Shell dashboard bersifat edge-to-edge (`w-full min-h-screen`, tanpa frame `max-w-[1440px]`/`rounded-[36px]`/`shadow-card`); backdrop `#DDE7F6`/`#0B132B` hanya di `html` (`frontend/src/index.css`), bukan di wrapper. KPI grid: 4 kartu via `grid-cols-1 sm:grid-cols-2 wide:grid-cols-4`, gaya `hover:border-*`.
+- Record monitor punya satu sumber: `DownMonitorRow.tsx` mengekspor `DownMonitorRow` (tabel) + `DownMonitorCard` (kartu) beserta skeleton-nya, dibungkus satu `MonitorRecords.tsx` (mount di `App.tsx` lewat `<MonitorRecords />`). `MonitorCards.tsx`, `DownMonitorRecord.tsx`, dan `MonitorTable.tsx` sudah tidak dipakai — hapus bersama pemakainya (butuh izin).
 
 ## Containerization (Docker)
 ### Arsitektur: Full-Stack (Frontend + Backend)
