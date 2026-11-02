@@ -27,7 +27,12 @@
 - State UI memakai discriminated union (`Result`, `LiveSlot`, `CountState`), bukan kombinasi boolean flag.
 - Self-check tanpa framework: `node --experimental-strip-types frontend/src/lib/api.test.ts` (assert manual, tanpa `node:assert` karena tsconfig frontend tidak memuat tipe Node).
 - Filter state dikelola hook `useFilters` (`frontend/src/hooks/useFilters.ts`); perubahan logika filter wajib lulus `node --experimental-strip-types frontend/src/hooks/useFilters.test.ts`.
-- Ikon custom di `frontend/src/components/icons.tsx`; hapus ikon yang tidak terpakai bersama pemakainya (jangan sisakan ekspor mati).
+- Ikon custom di `frontend/src/components/icons.tsx`; hapus ikon yang tidak terpakai bersama pemakainya (jangan sisakan ekspor mati). Aturan yang sama berlaku untuk komponen: hapus komponen mati bersama pemakainya.
+
+## Frontend (Layout & Data Dashboard)
+- Breakpoint custom `wide` (bukan `lg`/`xl`) didefinisikan di `frontend/src/index.css`: `@custom-variant wide (@media (width >= 45rem));`. Tabel monitor tampil di `wide:block`, kartu di `wide:hidden`.
+- KPI grid di `frontend/src/App.tsx`: 4 kartu (`Up`, `Down`, `Paused`, `Global Uptime`). Hanya `Up`/`Down`/`Paused` diambil dari `stats`; `Global Uptime` masih nilai mock (hardcode di `App.tsx`), bukan dari API. Ketika nilai ini dipindah ke backend, tambahkan field di `shared/index.ts` + guard + test sesuai aturan tiga tempat di atas.
+- Judul dashboard dan teks header bersifat statis (tidak dari API).
 
 ## Containerization (Docker)
 ### Arsitektur: Full-Stack (Frontend + Backend)
