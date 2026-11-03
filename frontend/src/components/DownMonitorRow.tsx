@@ -1,6 +1,6 @@
 import type { MonitorView } from '../lib/types';
 import { classifyError } from '../lib/errors';
-import { FigmaIcon, DribbbleIcon, SlackIcon } from './icons';
+import { FigmaIcon, DribbbleIcon } from './icons';
 
 function display(monitor: MonitorView) {
   return {
@@ -100,7 +100,7 @@ export function DownMonitorRow({ monitor, relativeTime, absoluteLabel }: Props) 
 
 /** Narrow-viewport card (< 45rem) matching mobile Stitch screen card layout */
 export function DownMonitorCard({ monitor, relativeTime, absoluteLabel }: Props) {
-  const { type, iso, ping, message } = display(monitor);
+  const { type, iso, message } = display(monitor);
 
   return (
     <article
@@ -124,12 +124,6 @@ export function DownMonitorCard({ monitor, relativeTime, absoluteLabel }: Props)
         </span>
       </div>
 
-      <div className="mt-3 pt-2.5 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-[11px]">
-        <div className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400 truncate max-w-[200px]">
-          <SlackIcon className="text-slate-400 shrink-0" />
-          <span className="truncate">Slack: #notifyme ({ping})</span>
-        </div>
-      </div>
       <p className="mt-2 text-[10px] font-mono text-slate-500 dark:text-slate-400 break-words bg-slate-50 dark:bg-slate-800/50 p-1.5 rounded-lg">
         {message}
       </p>

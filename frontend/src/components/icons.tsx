@@ -238,11 +238,3 @@ export function DribbbleIcon({ className = 'w-4 h-4' }: { className?: string }) 
     </svg>
   );
 }
-
-export function SlackIcon({ className = 'w-3.5 h-3.5' }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-      <path d="M6 15a2 2 0 1 0-2-2 2 2 0 0 0 2 2zm1-5a2 2 0 0 0-2-2 2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h2zm8 1a2 2 0 1 0 2 2 2 2 0 0 0-2-2zm-1 5a2 2 0 0 0 2 2 2 2 0 0 0 2-2v-2a2 2 0 0 0-2-2h-2zm-5-8a2 2 0 1 0 2 2 2 2 0 0 0-2-2zm5 1a2 2 0 0 0 2-2 2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v2zm-6 8a2 2 0 1 0-2-2 2 2 0 0 0 2 2zm-1-5a2 2 0 0 0-2-2 2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h2z" />
-    </svg>
-  );
-}
