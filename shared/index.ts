@@ -39,3 +39,17 @@ export interface DownMonitorsResponse {
 export interface ApiErrorResponse {
   error: string;
 }
+
+export interface SslExpiredItem {
+  monitor_id: number;
+  name: string;
+  type: string;
+  valid_to: string;
+  days_left: number;
+}
+
+/** GET /api/ssl-expired successful response */
+export interface SslExpiredResponse {
+  total: number;
+  data: SslExpiredItem[];
+}

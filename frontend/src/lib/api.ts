@@ -1,6 +1,12 @@
 // Thin API client for the backend. Both the dev server (Vite proxy)
 // and production should serve the API under the same origin prefix.
-import type { DownMonitor, DownMonitorsResponse, QuickStats } from "@shared/index.ts";
+import type {
+  DownMonitor,
+  DownMonitorsResponse,
+  QuickStats,
+  SslExpiredItem,
+  SslExpiredResponse,
+} from "@shared/index.ts";
 import type { MonitorId, MonitorView } from "./types";
 
 const API_BASE = "/api";
@@ -46,6 +52,29 @@ export function isDownMonitorsResponse(value: unknown): value is DownMonitorsRes
   });
 }
 
+/**
+ * Runtime guard for GET /api/ssl-expired responses.
+ */
+export function isSslExpiredResponse(value: unknown): value is SslExpiredResponse {
+  if (!isRecord(value)) return false;
+  if (!Number.isSafeInteger(value["total"]) || (value["total"] as number) < 0) return false;
+  const rows = value["data"];
+  if (!Array.isArray(rows)) return false;
+  return rows.every((row): row is SslExpiredItem => {
+    if (!isRecord(row)) return false;
+    return (
+      typeof row["monitor_id"] === "number" &&
+      Number.isSafeInteger(row["monitor_id"]) &&
+      typeof row["name"] === "string" &&
+      typeof row["type"] === "string" &&
+      typeof row["valid_to"] === "string" &&
+      !Number.isNaN(Date.parse(row["valid_to"])) &&
+      typeof row["days_left"] === "number" &&
+      !Number.isNaN(row["days_left"])
+    );
+  });
+}
+
 /** Attach the ID brand. Runs only after the field passed a typeof check above. */
 function toMonitorView(row: DownMonitor): MonitorView {
   return { ...row, monitor_id: row.monitor_id as MonitorId };
@@ -67,4 +96,22 @@ export async function fetchDownMonitors(): Promise<MonitorsResponse> {
     throw new Error(`Unexpected response from ${API_BASE}/down-monitors`);
   }
   return { total: raw.total, data: raw.data.map(toMonitorView), stats: raw.stats };
+}
+
+export async function fetchSslExpired(): Promise<SslExpiredResponse> {
+  const res = await fetch(`${API_BASE}/ssl-expired`, {
+    headers: { Accept: "application/json" },
+  });
+
+  if (!res.ok) {
+    const body: unknown = await res.json().catch(() => undefined);
+    const detail = isRecord(body) && typeof body["error"] === "string" ? body["error"] : undefined;
+    throw new Error(detail ?? `HTTP ${res.status}`);
+  }
+
+  const raw: unknown = await res.json();
+  if (!isSslExpiredResponse(raw)) {
+    throw new Error(`Unexpected response from ${API_BASE}/ssl-expired`);
+  }
+  return raw;
 }

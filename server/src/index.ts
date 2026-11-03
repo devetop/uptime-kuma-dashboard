@@ -8,7 +8,7 @@
  * Run from the project root:  npm run dev:server
  */
 import process from 'node:process';
-import { createApp, type MonitorLoader } from './lib/app.js';
+import { createApp } from './lib/app.js';
 
 const REQUIRED: Record<'sqlite' | 'remote', readonly string[]> = {
   sqlite: ['DB_PATH'],
@@ -44,13 +44,16 @@ async function main(): Promise<void> {
     ? await import('./lib/db-bridge.sqlite.js')
     : await import('./lib/db-bridge.mysql.js');
 
-  const loader: MonitorLoader = bridge.fetchDownMonitors;
-  const app = createApp(loader);
+  const app = createApp({
+    loadMonitors: bridge.fetchDownMonitors,
+    loadSslExpired: bridge.fetchSslExpired,
+  });
 
   const port = Number(process.env.PORT ?? 4242);
   const server = app.listen(port, () => {
     console.log(`[server] http://localhost:${port}  (db=${dbType})`);
     console.log('[server] GET /api/down-monitors');
+    console.log('[server] GET /api/ssl-expired');
   });
 
   // Graceful shutdown

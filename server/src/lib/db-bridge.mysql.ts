@@ -1,13 +1,15 @@
-import type { DownMonitor, QuickStats } from "@shared/index.ts";
-import { DOWN_MONITORS_SQL, QUICK_STATS_SQL } from "./sql.js";
-import { mapDownMonitorRows, mapQuickStats, type RawMonitorRow, type RawQuickStatsRow } from "./mappers.js";
+import type { DownMonitor, QuickStats, SslExpiredItem } from "@shared/index.ts";
+import { DOWN_MONITORS_SQL, QUICK_STATS_SQL, SSL_EXPIRED_MYSQL_SQL } from "./sql.js";
+import {
+  mapDownMonitorRows,
+  mapQuickStats,
+  mapSslExpiredRows,
+  type RawMonitorRow,
+  type RawQuickStatsRow,
+  type RawSslExpiredRow,
+} from "./mappers.js";
 
-/**
- * MySQL/MariaDB bridge. Creates a fresh pool per-request for simplicity.
- * For production workloads, keep the pool alive across requests instead.
- */
-export async function fetchData(): Promise<{ monitors: DownMonitor[]; stats: QuickStats }> {
-  const mysql = await import("mysql2/promise");
+function getPoolConfig() {
   const host     = process.env.DB_HOST;
   const port     = Number(process.env.DB_PORT ?? 3306);
   const database = process.env.DB_NAME;
@@ -20,7 +22,7 @@ export async function fetchData(): Promise<{ monitors: DownMonitor[]; stats: Qui
     );
   }
 
-  const pool = mysql.createPool({
+  return {
     host,
     port,
     database,
@@ -30,7 +32,16 @@ export async function fetchData(): Promise<{ monitors: DownMonitor[]; stats: Qui
     connectionLimit: 4,
     connectTimeout: 8000,
     charset: "utf8mb4",
-  });
+  };
+}
+
+/**
+ * MySQL/MariaDB bridge. Creates a fresh pool per-request for simplicity.
+ * For production workloads, keep the pool alive across requests instead.
+ */
+export async function fetchData(): Promise<{ monitors: DownMonitor[]; stats: QuickStats }> {
+  const mysql = await import("mysql2/promise");
+  const pool = mysql.createPool(getPoolConfig());
 
   try {
     const [monitorRows] = await pool.query(DOWN_MONITORS_SQL);
@@ -40,6 +51,18 @@ export async function fetchData(): Promise<{ monitors: DownMonitor[]; stats: Qui
       monitors: mapDownMonitorRows(monitorRows as unknown as RawMonitorRow[]),
       stats: mapQuickStats(firstStatsRow),
     };
+  } finally {
+    await pool.end();
+  }
+}
+
+export async function fetchSslExpired(): Promise<SslExpiredItem[]> {
+  const mysql = await import("mysql2/promise");
+  const pool = mysql.createPool(getPoolConfig());
+
+  try {
+    const [rows] = await pool.query(SSL_EXPIRED_MYSQL_SQL);
+    return mapSslExpiredRows(rows as unknown as RawSslExpiredRow[]);
   } finally {
     await pool.end();
   }

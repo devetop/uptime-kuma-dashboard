@@ -1,4 +1,4 @@
-import type { DownMonitor, QuickStats } from "@shared/index.ts";
+import type { DownMonitor, QuickStats, SslExpiredItem } from "@shared/index.ts";
 
 /** Raw row shape returned by DOWN_MONITORS_SQL */
 export interface RawMonitorRow {
@@ -20,6 +20,15 @@ export interface RawQuickStatsRow {
   unknown?: number | string | null;
   pause?: number | string | null;
   active?: number | string | null;
+}
+
+/** Raw row shape returned by SSL_EXPIRED_*_SQL */
+export interface RawSslExpiredRow {
+  monitor_id?: number | string | null;
+  name?: string | null;
+  type?: string | null;
+  valid_to?: string | null;
+  days_left?: number | string | null;
 }
 
 /**
@@ -54,4 +63,32 @@ export function mapQuickStats(row: RawQuickStatsRow | null | undefined): QuickSt
     pause:       row?.pause == null ? 0 : Number(row.pause) || 0,
     active:      row?.active == null ? 0 : Number(row.active) || 0,
   };
+}
+
+/**
+ * Coerce raw SSL expired rows into typed SslExpiredItem domain models.
+ * Filters out entries with missing or unparseable valid_to / days_left values,
+ * ensuring values are safe numbers and never NaN.
+ */
+export function mapSslExpiredRows(rows: readonly RawSslExpiredRow[]): SslExpiredItem[] {
+  const result: SslExpiredItem[] = [];
+  for (const r of rows) {
+    if (r.monitor_id == null || r.valid_to == null || r.days_left == null) continue;
+    const monitorId = Number(r.monitor_id);
+    const daysLeft = Number(r.days_left);
+    if (!Number.isSafeInteger(monitorId) || Number.isNaN(daysLeft)) continue;
+
+    // Check if valid_to parses to a valid timestamp
+    const dateParsed = Date.parse(String(r.valid_to));
+    if (Number.isNaN(dateParsed)) continue;
+
+    result.push({
+      monitor_id: monitorId,
+      name: String(r.name ?? ""),
+      type: String(r.type ?? ""),
+      valid_to: String(r.valid_to),
+      days_left: Math.round(daysLeft),
+    });
+  }
+  return result;
 }

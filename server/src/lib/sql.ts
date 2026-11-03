@@ -59,3 +59,43 @@ SELECT
     COALESCE(SUM(CASE WHEN is_active = 1 THEN 1 ELSE 0 END), 0)                                                  AS active
 FROM latest;
 `;
+
+/**
+ * SSL Expired queries:
+ * MySQL uses JSON_UNQUOTE, JSON_EXTRACT, TIMESTAMPDIFF, and INTERVAL 21 DAY.
+ * SQLite uses json_extract, substr/replace, julianday date arithmetic, and datetime('now', '+21 days').
+ */
+export const SSL_EXPIRED_MYSQL_SQL = `
+SELECT x.monitor_id, x.name, x.type, x.valid_to,
+       TIMESTAMPDIFF(DAY, UTC_TIMESTAMP(), x.valid_dt) AS days_left
+FROM (
+    SELECT m.id AS monitor_id, m.name, m.type,
+           JSON_UNQUOTE(JSON_EXTRACT(t.info_json, '$.certInfo.validTo')) AS valid_to,
+           STR_TO_DATE(
+               REPLACE(LEFT(JSON_UNQUOTE(JSON_EXTRACT(t.info_json, '$.certInfo.validTo')), 19), 'T', ' '),
+               '%Y-%m-%d %H:%i:%s'
+           ) AS valid_dt
+    FROM monitor m
+    JOIN monitor_tls_info t ON t.monitor_id = m.id
+    WHERE m.active = 1
+      AND JSON_VALID(t.info_json)
+) x
+WHERE x.valid_dt <= UTC_TIMESTAMP() + INTERVAL 21 DAY
+ORDER BY days_left ASC;
+`;
+
+export const SSL_EXPIRED_SQLITE_SQL = `
+SELECT x.monitor_id, x.name, x.type, x.valid_to,
+       CAST(julianday(x.valid_dt) - julianday('now') AS INTEGER) AS days_left
+FROM (
+    SELECT m.id AS monitor_id, m.name, m.type,
+           json_extract(t.info_json, '$.certInfo.validTo') AS valid_to,
+           replace(substr(json_extract(t.info_json, '$.certInfo.validTo'), 1, 19), 'T', ' ') AS valid_dt
+    FROM monitor m
+    JOIN monitor_tls_info t ON t.monitor_id = m.id
+    WHERE m.active = 1
+      AND json_valid(t.info_json)
+) x
+WHERE x.valid_dt <= datetime('now', '+21 days')
+ORDER BY days_left ASC;
+`;

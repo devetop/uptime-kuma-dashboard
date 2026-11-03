@@ -1,7 +1,7 @@
 // Runnable self-check for the API trust-boundary guard.
 // Run: node --experimental-strip-types frontend/src/lib/api.test.ts
 // Deliberately no `node:assert` import — the frontend tsconfig has no node types.
-import { isDownMonitorsResponse } from "./api.ts";
+import { isDownMonitorsResponse, isSslExpiredResponse } from "./api.ts";
 
 function assert(cond: boolean, msg: string): void {
   if (!cond) throw new Error(`FAIL: ${msg}`);
@@ -59,6 +59,39 @@ assert(isDownMonitorsResponse({ total: 1, data: [{ ...okRow, up: undefined, down
   { total: 1, data: [okRow], stats: { ...okStats, up: undefined } }, // missing field
 ].forEach((bad, i) => {
   assert(isDownMonitorsResponse(bad) === false, `rejects #${i}: ${JSON.stringify(bad)}`);
+});
+
+// Self-check for isSslExpiredResponse
+const okSslItem = {
+  monitor_id: 1,
+  name: "api.production-core.internal",
+  type: "https",
+  valid_to: "2025-05-20T14:00:00.000Z",
+  days_left: -2,
+};
+
+assert(isSslExpiredResponse({ total: 1, data: [okSslItem] }), "valid ssl payload accepted");
+assert(isSslExpiredResponse({ total: 0, data: [] }), "empty ssl payload accepted");
+
+[
+  null,
+  undefined,
+  [],
+  { total: "1", data: [okSslItem] },
+  { total: -1, data: [okSslItem] },
+  { total: 1.5, data: [okSslItem] },
+  { total: Number.NaN, data: [okSslItem] },
+  { total: 1 },
+  { total: 1, data: {} },
+  { total: 1, data: [null] },
+  { total: 1, data: [{ ...okSslItem, monitor_id: "1" }] },
+  { total: 1, data: [{ ...okSslItem, name: null }] },
+  { total: 1, data: [{ ...okSslItem, type: null }] },
+  { total: 1, data: [{ ...okSslItem, valid_to: "invalid-date-string-not-iso" }] },
+  { total: 1, data: [{ ...okSslItem, days_left: Number.NaN }] },
+  { total: 1, data: [{ ...okSslItem, days_left: "5" }] },
+].forEach((bad, i) => {
+  assert(isSslExpiredResponse(bad) === false, `rejects ssl #${i}: ${JSON.stringify(bad)}`);
 });
 
 console.log("api.test.ts: all assertions passed");

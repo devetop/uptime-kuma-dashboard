@@ -1,15 +1,23 @@
 import express, { type Request, type Response } from "express";
-import type { DownMonitor, DownMonitorsResponse, ApiErrorResponse, QuickStats } from "@shared/index.ts";
+import type {
+  DownMonitor,
+  DownMonitorsResponse,
+  ApiErrorResponse,
+  QuickStats,
+  SslExpiredItem,
+  SslExpiredResponse,
+} from "@shared/index.ts";
 
 /** Cache TTL: 5s prevents hammering the DB on fast auto-refresh cycles */
 const CACHE_TTL_MS = 5_000;
 
-interface CacheEntry {
+interface CacheEntry<T> {
   at: number;
-  payload: DownMonitorsResponse;
+  payload: T;
 }
 
-let cache: CacheEntry | null = null;
+let monitorsCache: CacheEntry<DownMonitorsResponse> | null = null;
+let sslCache: CacheEntry<SslExpiredResponse> | null = null;
 
 export interface LoadedData {
   monitors: DownMonitor[];
@@ -18,22 +26,28 @@ export interface LoadedData {
 
 /** Loader may be sync (sqlite) or async (mysql). */
 export type MonitorLoader = () => Promise<LoadedData> | LoadedData;
+export type SslExpiredLoader = () => Promise<SslExpiredItem[]> | SslExpiredItem[];
+
+export interface AppLoaders {
+  loadMonitors: MonitorLoader;
+  loadSslExpired?: SslExpiredLoader;
+}
 
 /**
  * Cached loader that deduplicates concurrent requests within the TTL window.
  * On loader failure, serves stale cache if present (avoids blank dashboards).
  */
-async function loadMonitors(loader: MonitorLoader): Promise<DownMonitorsResponse> {
+async function loadMonitorsCached(loader: MonitorLoader): Promise<DownMonitorsResponse> {
   const now = Date.now();
-  if (cache && now - cache.at < CACHE_TTL_MS) {
-    return cache.payload;
+  if (monitorsCache && now - monitorsCache.at < CACHE_TTL_MS) {
+    return monitorsCache.payload;
   }
 
   let data: LoadedData;
   try {
     data = await loader();
   } catch (err) {
-    if (cache) return cache.payload;
+    if (monitorsCache) return monitorsCache.payload;
     throw err;
   }
 
@@ -42,13 +56,40 @@ async function loadMonitors(loader: MonitorLoader): Promise<DownMonitorsResponse
     data: data.monitors,
     stats: data.stats,
   };
-  cache = { at: now, payload };
+  monitorsCache = { at: now, payload };
   return payload;
 }
 
-export function createApp(loader: MonitorLoader) {
+async function loadSslExpiredCached(loader: SslExpiredLoader): Promise<SslExpiredResponse> {
+  const now = Date.now();
+  if (sslCache && now - sslCache.at < CACHE_TTL_MS) {
+    return sslCache.payload;
+  }
+
+  let data: SslExpiredItem[];
+  try {
+    data = await loader();
+  } catch (err) {
+    if (sslCache) return sslCache.payload;
+    throw err;
+  }
+
+  const payload: SslExpiredResponse = {
+    total: data.length,
+    data,
+  };
+  sslCache = { at: now, payload };
+  return payload;
+}
+
+export function createApp(loaders: MonitorLoader | AppLoaders) {
   const app = express();
   app.disable("x-powered-by");
+
+  const monitorLoader: MonitorLoader =
+    typeof loaders === "function" ? loaders : loaders.loadMonitors;
+  const sslLoader: SslExpiredLoader | undefined =
+    typeof loaders === "object" ? loaders.loadSslExpired : undefined;
 
   // CORS — allows the frontend dev server origin, defaults to wildcard
   app.use((req, res, next) => {
@@ -64,13 +105,25 @@ export function createApp(loader: MonitorLoader) {
 
   app.get("/api/down-monitors", async (_req: Request, res: Response) => {
     try {
-      res.json(await loadMonitors(loader));
+      res.json(await loadMonitorsCached(monitorLoader));
     } catch (err) {
       const message = err instanceof Error ? err.message : "Unknown error";
       const body: ApiErrorResponse = { error: `Failed to load monitors: ${message}` };
       res.status(500).json(body);
     }
   });
+
+  if (sslLoader) {
+    app.get("/api/ssl-expired", async (_req: Request, res: Response) => {
+      try {
+        res.json(await loadSslExpiredCached(sslLoader));
+      } catch (err) {
+        const message = err instanceof Error ? err.message : "Unknown error";
+        const body: ApiErrorResponse = { error: `Failed to load SSL expired monitors: ${message}` };
+        res.status(500).json(body);
+      }
+    });
+  }
 
   app.get("/api/health", (_req: Request, res: Response) => {
     res.json({ ok: true, uptime: process.uptime() });

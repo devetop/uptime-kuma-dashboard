@@ -4,20 +4,36 @@ import type { CategoryCount } from '../hooks/useFilters';
 import {
   UpplyLogoIcon,
   DashboardIcon,
-  MonitorsIcon,
+  SslIcon,
   StatusPagesIcon,
   TeamsIcon,
   SettingsIcon,
 } from './icons';
+
+export type NavTab = 'dashboard' | 'ssl';
 
 interface Props {
   count: CountState;
   cats: CategoryCount[];
   active: Set<ErrorCategory>;
   onToggle: (c: ErrorCategory) => void;
+  activeTab?: NavTab;
+  onSelectTab?: (tab: NavTab) => void;
+  sslCriticalCount?: number;
 }
 
-export function FilterRail({ count, cats, active, onToggle }: Props) {
+export function FilterRail({
+  count,
+  cats,
+  active,
+  onToggle,
+  activeTab = 'dashboard',
+  onSelectTab,
+  sslCriticalCount = 0,
+}: Props) {
+  const isDashboard = activeTab === 'dashboard';
+  const isSsl = activeTab === 'ssl';
+
   return (
     <aside
       aria-label="Sidebar navigation"
@@ -37,27 +53,52 @@ export function FilterRail({ count, cats, active, onToggle }: Props) {
 
         {/* Navigation Menu Links */}
         <nav className="flex wide:flex-col gap-1.5 overflow-x-auto no-scrollbar font-medium" data-purpose="navigation-links">
-          {/* Active Item: Dashboard */}
+          {/* Dashboard Item */}
           <a
             href="#dashboard"
-            className="flex items-center gap-3 px-4 py-2.5 rounded-full bg-brand-500 text-white shadow-pill font-semibold transition-all whitespace-nowrap"
+            onClick={(e) => {
+              if (onSelectTab) {
+                e.preventDefault();
+                onSelectTab('dashboard');
+              }
+            }}
+            className={`flex items-center gap-3 px-4 py-2.5 rounded-full font-semibold transition-all whitespace-nowrap ${
+              isDashboard
+                ? 'bg-brand-500 text-white shadow-pill'
+                : 'text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/50 group'
+            }`}
           >
-            <DashboardIcon className="w-4 h-4 shrink-0" />
+            <DashboardIcon className={`w-4 h-4 shrink-0 ${isDashboard ? 'text-white' : 'text-slate-400 group-hover:text-slate-700 dark:group-hover:text-slate-200 transition'}`} />
             <span className="text-sm">Dashboard</span>
             {count.state === 'count' && count.total > 0 && (
-              <span className="ml-auto inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-white/20 text-white">
+              <span className={`ml-auto inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${isDashboard ? 'bg-white/20 text-white' : 'bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:text-rose-400'}`}>
                 {count.total}
               </span>
             )}
           </a>
 
-          {/* Monitors */}
+          {/* Monitor SSL Nav Entry */}
           <a
-            href="#monitors"
-            className="flex items-center gap-3 px-4 py-2.5 rounded-full text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all group whitespace-nowrap"
+            href="#ssl"
+            onClick={(e) => {
+              if (onSelectTab) {
+                e.preventDefault();
+                onSelectTab('ssl');
+              }
+            }}
+            className={`flex items-center gap-3 px-4 py-2.5 rounded-full font-semibold transition-all whitespace-nowrap ${
+              isSsl
+                ? 'bg-brand-500 text-white shadow-pill'
+                : 'text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/50 group'
+            }`}
           >
-            <MonitorsIcon className="w-4 h-4 text-slate-400 group-hover:text-slate-700 dark:group-hover:text-slate-200 transition shrink-0" />
-            <span className="text-sm">Monitors</span>
+            <SslIcon className={`w-4 h-4 shrink-0 ${isSsl ? 'text-white' : 'text-slate-400 group-hover:text-slate-700 dark:group-hover:text-slate-200 transition'}`} />
+            <span className="text-sm">Monitor SSL</span>
+            {sslCriticalCount > 0 && (
+              <span className={`ml-auto inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${isSsl ? 'bg-white/20 text-white' : 'bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:text-rose-400'}`}>
+                {sslCriticalCount}
+              </span>
+            )}
           </a>
 
           {/* Status Pages */}
@@ -88,8 +129,8 @@ export function FilterRail({ count, cats, active, onToggle }: Props) {
           </a>
         </nav>
 
-        {/* Error Type Filter Chips */}
-        {cats.length > 0 && (
+        {/* Error Type Filter Chips (only active in dashboard view) */}
+        {isDashboard && cats.length > 0 && (
           <div className="pt-2 border-t border-slate-100 dark:border-slate-800/80">
             <h2 className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-2.5 px-2">
               Filter by Error
