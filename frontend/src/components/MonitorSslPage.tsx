@@ -128,10 +128,6 @@ export function MonitorSslPage({
               <h1 className="text-2xl sm:text-[28px] font-bold tracking-tight text-slate-900 dark:text-white">
                 Monitor SSL
               </h1>
-              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                <span className="text-[10px] font-bold uppercase tracking-wider">Live Engine</span>
-              </div>
             </div>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
               Tracking SSL/TLS certificate expiry across active monitors (expiring within 21 days)
