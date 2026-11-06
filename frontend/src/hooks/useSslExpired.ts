@@ -8,6 +8,7 @@ export interface SslResult {
   error: string | null;
   data: SslExpiredItem[];
   total: number;
+  activeTlsMonitored: number;
 }
 
 export function useSslExpired(pollMs = 5_000): SslResult & {
@@ -19,6 +20,7 @@ export function useSslExpired(pollMs = 5_000): SslResult & {
     error: null,
     data: [],
     total: 0,
+    activeTlsMonitored: 0,
   });
 
   const load = useCallback(async () => {
@@ -33,6 +35,7 @@ export function useSslExpired(pollMs = 5_000): SslResult & {
         error: null,
         data: res.data,
         total: res.total,
+        activeTlsMonitored: res.active_tls_monitored,
       });
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Unknown error';

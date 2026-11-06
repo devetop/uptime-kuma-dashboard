@@ -52,4 +52,6 @@ export interface SslExpiredItem {
 export interface SslExpiredResponse {
   total: number;
   data: SslExpiredItem[];
+  /** Active monitors with recorded TLS info (the whole monitored fleet) */
+  active_tls_monitored: number;
 }

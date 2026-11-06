@@ -19,6 +19,7 @@ export function App() {
   const {
     data: sslData,
     total: sslTotal,
+    activeTlsMonitored: sslActiveTlsMonitored,
     loading: sslLoading,
     error: sslError,
     reload: sslReload,
@@ -109,6 +110,7 @@ export function App() {
           <MonitorSslPage
             data={sslData}
             total={sslTotal}
+            activeTlsMonitored={sslActiveTlsMonitored}
             loading={sslLoading}
             error={sslError}
             onRefresh={refresh}

@@ -6,6 +6,7 @@ import { EmptyState } from './EmptyState';
 interface Props {
   data: SslExpiredItem[];
   total: number;
+  activeTlsMonitored: number;
   loading: boolean;
   error: string | null;
   onRefresh: () => void;
@@ -63,6 +64,7 @@ function getUrgencyInfo(daysLeft: number) {
 export function MonitorSslPage({
   data,
   total,
+  activeTlsMonitored,
   loading,
   error,
   onRefresh,
@@ -98,7 +100,8 @@ export function MonitorSslPage({
       }
     }
 
-    const totalFleet = Math.max(total + 100, 128); // representative fleet total matching design
+    // Real fleet size from the API (active monitors with recorded TLS info).
+    const totalFleet = activeTlsMonitored;
     const healthyCount = Math.max(totalFleet - expiredCount - criticalCount - upcomingCount, 0);
 
     return {
@@ -108,12 +111,13 @@ export function MonitorSslPage({
       healthyCount,
       totalFleet,
     };
-  }, [data, total]);
+  }, [data, activeTlsMonitored]);
 
-  const expiredPct = ((stats.expiredCount / stats.totalFleet) * 100).toFixed(1);
-  const criticalPct = ((stats.criticalCount / stats.totalFleet) * 100).toFixed(1);
-  const upcomingPct = ((stats.upcomingCount / stats.totalFleet) * 100).toFixed(1);
-  const healthyPct = ((stats.healthyCount / stats.totalFleet) * 100).toFixed(1);
+  const fleetDenom = Math.max(stats.totalFleet, 1);
+  const expiredPct = ((stats.expiredCount / fleetDenom) * 100).toFixed(1);
+  const criticalPct = ((stats.criticalCount / fleetDenom) * 100).toFixed(1);
+  const upcomingPct = ((stats.upcomingCount / fleetDenom) * 100).toFixed(1);
+  const healthyPct = ((stats.healthyCount / fleetDenom) * 100).toFixed(1);
 
   return (
     <main

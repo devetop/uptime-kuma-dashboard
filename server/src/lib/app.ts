@@ -26,7 +26,12 @@ export interface LoadedData {
 
 /** Loader may be sync (sqlite) or async (mysql). */
 export type MonitorLoader = () => Promise<LoadedData> | LoadedData;
-export type SslExpiredLoader = () => Promise<SslExpiredItem[]> | SslExpiredItem[];
+export interface SslExpiredData {
+  items: SslExpiredItem[];
+  activeTlsMonitored: number;
+}
+
+export type SslExpiredLoader = () => Promise<SslExpiredData> | SslExpiredData;
 
 export interface AppLoaders {
   loadMonitors: MonitorLoader;
@@ -66,7 +71,7 @@ async function loadSslExpiredCached(loader: SslExpiredLoader): Promise<SslExpire
     return sslCache.payload;
   }
 
-  let data: SslExpiredItem[];
+  let data: SslExpiredData;
   try {
     data = await loader();
   } catch (err) {
@@ -75,8 +80,9 @@ async function loadSslExpiredCached(loader: SslExpiredLoader): Promise<SslExpire
   }
 
   const payload: SslExpiredResponse = {
-    total: data.length,
-    data,
+    total: data.items.length,
+    data: data.items,
+    active_tls_monitored: data.activeTlsMonitored,
   };
   sslCache = { at: now, payload };
   return payload;

@@ -1,14 +1,16 @@
 import "node:sqlite";
 import { DatabaseSync } from "node:sqlite";
 import type { DownMonitor, QuickStats, SslExpiredItem } from "@shared/index.ts";
-import { DOWN_MONITORS_SQL, QUICK_STATS_SQL, SSL_EXPIRED_SQLITE_SQL } from "./sql.js";
+import { DOWN_MONITORS_SQL, QUICK_STATS_SQL, SSL_EXPIRED_SQLITE_SQL, ACTIVE_TLS_MONITORED_SQL } from "./sql.js";
 import {
   mapDownMonitorRows,
   mapQuickStats,
   mapSslExpiredRows,
+  mapActiveTlsMonitored,
   type RawMonitorRow,
   type RawQuickStatsRow,
   type RawSslExpiredRow,
+  type RawActiveTlsRow,
 } from "./mappers.js";
 
 let dbHandle: DatabaseSync | null = null;
@@ -39,10 +41,14 @@ export function fetchData(): { monitors: DownMonitor[]; stats: QuickStats } {
   };
 }
 
-export function fetchSslExpired(): SslExpiredItem[] {
+export function fetchSslExpired(): { items: SslExpiredItem[]; activeTlsMonitored: number } {
   const client = getDb();
   const rows = client.prepare(SSL_EXPIRED_SQLITE_SQL).all() as unknown as RawSslExpiredRow[];
-  return mapSslExpiredRows(rows);
+  const countRow = client.prepare(ACTIVE_TLS_MONITORED_SQL).get() as unknown as RawActiveTlsRow | undefined;
+  return {
+    items: mapSslExpiredRows(rows),
+    activeTlsMonitored: mapActiveTlsMonitored(countRow),
+  };
 }
 
 // Alias for backwards compatibility if needed

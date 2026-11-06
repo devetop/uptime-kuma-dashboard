@@ -22,6 +22,17 @@ export interface RawQuickStatsRow {
   active?: number | string | null;
 }
 
+/** Raw row shape returned by ACTIVE_TLS_MONITORED_SQL */
+export interface RawActiveTlsRow {
+  active_tls_monitored?: number | string | null;
+}
+
+/** Coerce the active-TLS count row to a non-negative safe integer. */
+export function mapActiveTlsMonitored(row: RawActiveTlsRow | null | undefined): number {
+  const n = Number(row?.active_tls_monitored);
+  return Number.isSafeInteger(n) && n >= 0 ? n : 0;
+}
+
 /** Raw row shape returned by SSL_EXPIRED_*_SQL */
 export interface RawSslExpiredRow {
   monitor_id?: number | string | null;

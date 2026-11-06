@@ -14,7 +14,7 @@
 
 ## Kontrak API & Tipe Bersama
 - Semua tipe domain (`DownMonitor`, `QuickStats`, `DownMonitorsResponse`, `SslExpiredItem`, `SslExpiredResponse`) ada di `shared/index.ts`; server dan frontend mengimpornya via `@shared/index.ts`. Jangan menduplikasi bentuk response.
-- Dua endpoint: `GET /api/down-monitors` mengembalikan `{ total, data, stats }`; `total` = panjang `data`, `stats` = agregat cepat per status monitor. `GET /api/ssl-expired` mengembalikan `{ total, data }`; `total` = panjang `data`.
+- Dua endpoint: `GET /api/down-monitors` mengembalikan `{ total, data, stats }`; `total` = panjang `data`, `stats` = agregat cepat per status monitor. `GET /api/ssl-expired` mengembalikan `{ total, data, active_tls_monitored }`; `total` = panjang `data` (hanya sertifikat yang kedaluwarsa ≤ 21 hari), sedangkan `active_tls_monitored` = jumlah seluruh fleet TLS aktif (di luar filter 21 hari).
 - `QuickStats` (`up`, `down`, `pending`, `maintenance`, `unknown`, `pause`, `active`) dihitung `QUICK_STATS_SQL` di `server/src/lib/sql.ts`: status heartbeat `1=up, 0=down, 2=pending, 3=maintenance`, selain itu `unknown`; `active` dipropagasi dari parent ke child lewat recursive CTE (child non-aktif bila parent non-aktif).
 - `QUICK_STATS_SQL` dan `DOWN_MONITORS_SQL` harus portabel untuk MySQL/MariaDB dan SQLite karena kedua bridge memakainya. `query-quick-statistic.sql` di root hanya referensi dialek MySQL, bukan query yang dijalankan server.
 - Nilai mentah DB dinormalisasi di `server/src/lib/mappers.ts` (`Number(...)`, fallback `0`/`""`/`null`); jangan casting mentah ke tipe domain.
@@ -26,6 +26,7 @@
 - `SSL_EXPIRED_MYSQL_SQL` dan `SSL_EXPIRED_SQLITE_SQL` di `server/src/lib/sql.ts` harus portabel untuk kedua dialek; `query-ssl-expired.sql` di root hanya referensi dialek MySQL, bukan query yang dijalankan server.
 - Query membaca `monitor_tls_info.info_json` → `$.certInfo.validTo`, filter `active = 1` dan sertifikat kedaluwarsa ≤ **21 hari**; field `days_left` dihitung dengan `TIMESTAMPDIFF` (MySQL) / `julianday` (SQLite).
 - Bridge wajib mengekspor `fetchSslExpired` selain `fetchDownMonitors`; `createApp` menerima objek `AppLoaders` (`loadMonitors` + `loadSslExpired`), bukan lagi satu fungsi loader.
+- `fetchSslExpired` mengembalikan `{ items, activeTlsMonitored }` (bukan array telanjang); tipe loader `SslExpiredLoader` mengembalikan `SslExpiredData`. `activeTlsMonitored` dihitung `ACTIVE_TLS_MONITORED_SQL` — query **portabel tunggal** (MySQL/MariaDB dan SQLite) yang memakai `COUNT(DISTINCT m.id)`, `JOIN monitor_tls_info`, dan `t.info_json LIKE '%"validTo"%'`. Jangan ganti ke `JSON_EXTRACT`/`json_extract`: keduanya spesifik dialek dan memecah sifat satu-query; `LIKE` dipilih sebagai trade-off (substring, bukan path persis). Baris count dinormalisasi `mapActiveTlsMonitored` (safe integer, fallback 0).
 - Baris SSL mentah dinormalisasi di `mapSslExpiredRows`: baris dengan `valid_to`/`days_left` tak terparse dibuang (bukan di-coerce ke 0), karena tanggal rusak lebih baik hilang daripada bohong.
 
 ## Konvensi Frontend (State & Validasi)
@@ -38,7 +39,8 @@
 
 ## Frontend (Layout & Data Dashboard)
 - Breakpoint custom `wide` (bukan `lg`/`xl`) didefinisikan di `frontend/src/index.css`: `@custom-variant wide (@media (width >= 45rem));`. Tabel monitor tampil di `wide:block`, kartu di `wide:hidden`.
-- KPI grid di `frontend/src/App.tsx`: 4 kartu (`Up`, `Down`, `Paused`, `Global Uptime`). Hanya `Up`/`Down`/`Paused` diambil dari `stats`; `Global Uptime` masih nilai mock (hardcode di `App.tsx`), bukan dari API. Ketika nilai ini dipindah ke backend, tambahkan field di `shared/index.ts` + guard + test sesuai aturan tiga tempat di atas.
+- KPI grid di `frontend/src/App.tsx`: 4 kartu (`Up`, `Down`, `Paused`, `Global Uptime`). `Up`/`Down`/`Paused` diambil dari `stats`; `Global Uptime` masih nilai mock (hardcode di `App.tsx`), bukan dari API. Ketika nilai ini dipindah ke backend, tambahkan field di `shared/index.ts` + guard + test sesuai aturan tiga tempat di atas.
+- Kartu **"Active TLS Monitored"** di `MonitorSslPage.tsx` menampilkan `activeTlsMonitored` (dari API) sebagai `totalFleet`; jangan hardcode baseline fleet (sebelumnya `Math.max(total + 100, 128)`). Badge `"98.4% Up"` dan bar 88% pada kartu itu **masih mock** — bila diturunkan dari data, ikuti aturan tiga tempat.
 - Judul dashboard dan teks header bersifat statis (tidak dari API), termasuk logo, nav sidebar, dan versi footer `v2.4.0` di `FilterRail.tsx`.
 - Navigasi halaman memakai tab state lokal, bukan router: `NavTab = 'dashboard' | 'ssl'` di `FilterRail.tsx`, di-switch `useState<NavTab>` di `App.tsx`. Entry "Dashboard" dan "Monitor SSL" berfungsi; "Status Pages", "Teams", "Settings" masih murni dekoratif (tanpa handler) — jangan tambah rute/dependency router tanpa diminta.
 - Shell dashboard bersifat edge-to-edge (`w-full min-h-screen`, tanpa frame `max-w-[1440px]`/`rounded-[36px]`/`shadow-card`); backdrop `#DDE7F6`/`#0B132B` hanya di `html` (`frontend/src/index.css`), bukan di wrapper. KPI grid: 4 kartu via `grid-cols-1 sm:grid-cols-2 wide:grid-cols-4`, gaya `hover:border-*`.

@@ -70,26 +70,32 @@ const okSslItem = {
   days_left: -2,
 };
 
-assert(isSslExpiredResponse({ total: 1, data: [okSslItem] }), "valid ssl payload accepted");
-assert(isSslExpiredResponse({ total: 0, data: [] }), "empty ssl payload accepted");
+const okSslBody = { total: 1, data: [okSslItem], active_tls_monitored: 128 };
+
+assert(isSslExpiredResponse(okSslBody), "valid ssl payload accepted");
+assert(isSslExpiredResponse({ total: 0, data: [], active_tls_monitored: 0 }), "empty ssl payload accepted");
 
 [
   null,
   undefined,
   [],
-  { total: "1", data: [okSslItem] },
-  { total: -1, data: [okSslItem] },
-  { total: 1.5, data: [okSslItem] },
-  { total: Number.NaN, data: [okSslItem] },
+  { ...okSslBody, total: "1" },
+  { ...okSslBody, total: -1 },
+  { ...okSslBody, total: 1.5 },
+  { ...okSslBody, total: Number.NaN },
   { total: 1 },
-  { total: 1, data: {} },
-  { total: 1, data: [null] },
-  { total: 1, data: [{ ...okSslItem, monitor_id: "1" }] },
-  { total: 1, data: [{ ...okSslItem, name: null }] },
-  { total: 1, data: [{ ...okSslItem, type: null }] },
-  { total: 1, data: [{ ...okSslItem, valid_to: "invalid-date-string-not-iso" }] },
-  { total: 1, data: [{ ...okSslItem, days_left: Number.NaN }] },
-  { total: 1, data: [{ ...okSslItem, days_left: "5" }] },
+  { ...okSslBody, data: {} },
+  { ...okSslBody, data: [null] },
+  { ...okSslBody, data: [{ ...okSslItem, monitor_id: "1" }] },
+  { ...okSslBody, data: [{ ...okSslItem, name: null }] },
+  { ...okSslBody, data: [{ ...okSslItem, type: null }] },
+  { ...okSslBody, data: [{ ...okSslItem, valid_to: "invalid-date-string-not-iso" }] },
+  { ...okSslBody, data: [{ ...okSslItem, days_left: Number.NaN }] },
+  { ...okSslBody, data: [{ ...okSslItem, days_left: "5" }] },
+  { total: 1, data: [okSslItem] }, // missing active_tls_monitored
+  { ...okSslBody, active_tls_monitored: "128" }, // string count
+  { ...okSslBody, active_tls_monitored: -1 },
+  { ...okSslBody, active_tls_monitored: 1.5 },
 ].forEach((bad, i) => {
   assert(isSslExpiredResponse(bad) === false, `rejects ssl #${i}: ${JSON.stringify(bad)}`);
 });

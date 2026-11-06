@@ -61,6 +61,20 @@ FROM latest;
 `;
 
 /**
+ * ACTIVE TLS MONITORED: active monitors with a recorded cert `validTo` in
+ * `monitor_tls_info.info_json`. Portable across MySQL/MariaDB and SQLite:
+ * COUNT(DISTINCT ...), INNER JOIN and LIKE are all common. LIKE is used instead
+ * of JSON_EXTRACT/json_extract, which are dialect-specific.
+ */
+export const ACTIVE_TLS_MONITORED_SQL = `
+SELECT COUNT(DISTINCT m.id) AS active_tls_monitored
+FROM monitor m
+JOIN monitor_tls_info t ON t.monitor_id = m.id
+WHERE m.active = 1
+  AND t.info_json LIKE '%"validTo"%';
+`;
+
+/**
  * SSL Expired queries:
  * MySQL uses JSON_UNQUOTE, JSON_EXTRACT, TIMESTAMPDIFF, and INTERVAL 21 DAY.
  * SQLite uses json_extract, substr/replace, julianday date arithmetic, and datetime('now', '+21 days').

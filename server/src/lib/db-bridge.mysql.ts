@@ -1,12 +1,14 @@
 import type { DownMonitor, QuickStats, SslExpiredItem } from "@shared/index.ts";
-import { DOWN_MONITORS_SQL, QUICK_STATS_SQL, SSL_EXPIRED_MYSQL_SQL } from "./sql.js";
+import { DOWN_MONITORS_SQL, QUICK_STATS_SQL, SSL_EXPIRED_MYSQL_SQL, ACTIVE_TLS_MONITORED_SQL } from "./sql.js";
 import {
   mapDownMonitorRows,
   mapQuickStats,
   mapSslExpiredRows,
+  mapActiveTlsMonitored,
   type RawMonitorRow,
   type RawQuickStatsRow,
   type RawSslExpiredRow,
+  type RawActiveTlsRow,
 } from "./mappers.js";
 
 function getPoolConfig() {
@@ -56,13 +58,18 @@ export async function fetchData(): Promise<{ monitors: DownMonitor[]; stats: Qui
   }
 }
 
-export async function fetchSslExpired(): Promise<SslExpiredItem[]> {
+export async function fetchSslExpired(): Promise<{ items: SslExpiredItem[]; activeTlsMonitored: number }> {
   const mysql = await import("mysql2/promise");
   const pool = mysql.createPool(getPoolConfig());
 
   try {
     const [rows] = await pool.query(SSL_EXPIRED_MYSQL_SQL);
-    return mapSslExpiredRows(rows as unknown as RawSslExpiredRow[]);
+    const [countRows] = await pool.query(ACTIVE_TLS_MONITORED_SQL);
+    const firstCountRow = Array.isArray(countRows) ? (countRows[0] as RawActiveTlsRow | undefined) : undefined;
+    return {
+      items: mapSslExpiredRows(rows as unknown as RawSslExpiredRow[]),
+      activeTlsMonitored: mapActiveTlsMonitored(firstCountRow),
+    };
   } finally {
     await pool.end();
   }

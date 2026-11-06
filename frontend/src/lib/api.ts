@@ -58,6 +58,7 @@ export function isDownMonitorsResponse(value: unknown): value is DownMonitorsRes
 export function isSslExpiredResponse(value: unknown): value is SslExpiredResponse {
   if (!isRecord(value)) return false;
   if (!Number.isSafeInteger(value["total"]) || (value["total"] as number) < 0) return false;
+  if (!Number.isSafeInteger(value["active_tls_monitored"]) || (value["active_tls_monitored"] as number) < 0) return false;
   const rows = value["data"];
   if (!Array.isArray(rows)) return false;
   return rows.every((row): row is SslExpiredItem => {
@@ -113,5 +114,9 @@ export async function fetchSslExpired(): Promise<SslExpiredResponse> {
   if (!isSslExpiredResponse(raw)) {
     throw new Error(`Unexpected response from ${API_BASE}/ssl-expired`);
   }
-  return raw;
+  return {
+    total: raw.total,
+    data: raw.data,
+    active_tls_monitored: raw.active_tls_monitored,
+  };
 }
