@@ -5,12 +5,12 @@ import {
   UpplyLogoIcon,
   DashboardIcon,
   SslIcon,
-  StatusPagesIcon,
+  DomainIcon,
   TeamsIcon,
   SettingsIcon,
 } from './icons';
 
-export type NavTab = 'dashboard' | 'ssl';
+export type NavTab = 'dashboard' | 'ssl' | 'domain';
 
 interface Props {
   count: CountState;
@@ -20,6 +20,7 @@ interface Props {
   activeTab?: NavTab;
   onSelectTab?: (tab: NavTab) => void;
   sslCriticalCount?: number;
+  domainCriticalCount?: number;
 }
 
 export function FilterRail({
@@ -30,9 +31,11 @@ export function FilterRail({
   activeTab = 'dashboard',
   onSelectTab,
   sslCriticalCount = 0,
+  domainCriticalCount = 0,
 }: Props) {
   const isDashboard = activeTab === 'dashboard';
   const isSsl = activeTab === 'ssl';
+  const isDomain = activeTab === 'domain';
 
   return (
     <aside
@@ -101,13 +104,28 @@ export function FilterRail({
             )}
           </a>
 
-          {/* Status Pages */}
+          {/* Monitor Domain Nav Entry */}
           <a
-            href="#status-pages"
-            className="flex items-center gap-3 px-4 py-2.5 rounded-full text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all group whitespace-nowrap"
+            href="#domain"
+            onClick={(e) => {
+              if (onSelectTab) {
+                e.preventDefault();
+                onSelectTab('domain');
+              }
+            }}
+            className={`flex items-center gap-3 px-4 py-2.5 rounded-full font-semibold transition-all whitespace-nowrap ${
+              isDomain
+                ? 'bg-brand-500 text-white shadow-pill'
+                : 'text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/50 group'
+            }`}
           >
-            <StatusPagesIcon className="w-4 h-4 text-slate-400 group-hover:text-slate-700 dark:group-hover:text-slate-200 transition shrink-0" />
-            <span className="text-sm">Status Pages</span>
+            <DomainIcon className={`w-4 h-4 shrink-0 ${isDomain ? 'text-white' : 'text-slate-400 group-hover:text-slate-700 dark:group-hover:text-slate-200 transition'}`} />
+            <span className="text-sm">Monitor Domain</span>
+            {domainCriticalCount > 0 && (
+              <span className={`ml-auto inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${isDomain ? 'bg-white/20 text-white' : 'bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:text-rose-400'}`}>
+                {domainCriticalCount}
+              </span>
+            )}
           </a>
 
           {/* Teams */}

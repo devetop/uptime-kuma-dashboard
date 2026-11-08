@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import type { CountState, LiveSlot } from './lib/types';
 import { useDownMonitors } from './hooks/useDownMonitors';
 import { useSslExpired } from './hooks/useSslExpired';
+import { useDomainExpired } from './hooks/useDomainExpired';
 import { useTheme } from './hooks/useTheme';
 import { useTicker } from './hooks/useTicker';
 import { filterRows, useCategoryCounts, useToggleSet } from './hooks/useFilters';
@@ -10,6 +11,7 @@ import { ErrorBanner } from './components/ErrorBanner';
 import { FilterRail, type NavTab } from './components/FilterRail';
 import { MonitorRecords } from './components/MonitorRecords';
 import { MonitorSslPage } from './components/MonitorSslPage';
+import { MonitorDomainPage } from './components/MonitorDomainPage';
 
 export function App() {
   const [currentTab, setCurrentTab] = useState<NavTab>('dashboard');
@@ -24,6 +26,15 @@ export function App() {
     error: sslError,
     reload: sslReload,
   } = useSslExpired(5_000);
+
+  const {
+    data: domainData,
+    total: domainTotal,
+    activeDomainsMonitored: domainActiveDomainsMonitored,
+    loading: domainLoading,
+    error: domainError,
+    reload: domainReload,
+  } = useDomainExpired(5_000);
 
   const { isDark, toggleTheme } = useTheme();
 
@@ -69,6 +80,7 @@ export function App() {
   const refresh = () => {
     void reload();
     void sslReload();
+    void domainReload();
   };
   const clearFilters = () => {
     setFilter('');
@@ -90,6 +102,11 @@ export function App() {
     return sslData.filter((i) => i.days_left <= 7).length;
   }, [sslData]);
 
+  // Critical Domain count for nav indicator
+  const domainCriticalCount = useMemo(() => {
+    return domainData.filter((i) => i.days_left <= 7).length;
+  }, [domainData]);
+
   return (
     <div className="min-h-screen w-full bg-white dark:bg-slate-900 selection:bg-brand-100 selection:text-brand-700 transition-colors">
       {/* Main Dashboard Frame Container edge-to-edge */}
@@ -103,9 +120,10 @@ export function App() {
           activeTab={currentTab}
           onSelectTab={setCurrentTab}
           sslCriticalCount={sslCriticalCount}
+          domainCriticalCount={domainCriticalCount}
         />
 
-        {/* View Switching: Dashboard or Monitor SSL */}
+        {/* View Switching: Dashboard, Monitor SSL, or Monitor Domain */}
         {currentTab === 'ssl' ? (
           <MonitorSslPage
             data={sslData}
@@ -113,6 +131,17 @@ export function App() {
             activeTlsMonitored={sslActiveTlsMonitored}
             loading={sslLoading}
             error={sslError}
+            onRefresh={refresh}
+            isDark={isDark}
+            onToggleTheme={toggleTheme}
+          />
+        ) : currentTab === 'domain' ? (
+          <MonitorDomainPage
+            data={domainData}
+            total={domainTotal}
+            activeDomainsMonitored={domainActiveDomainsMonitored}
+            loading={domainLoading}
+            error={domainError}
             onRefresh={refresh}
             isDark={isDark}
             onToggleTheme={toggleTheme}

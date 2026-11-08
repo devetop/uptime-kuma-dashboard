@@ -55,3 +55,18 @@ export interface SslExpiredResponse {
   /** Active monitors with recorded TLS info (the whole monitored fleet) */
   active_tls_monitored: number;
 }
+
+export interface DomainExpiredItem {
+  domain: string;
+  expiry: string;
+  days_left: number;
+  last_deadline_sent: string | null;
+}
+
+/** GET /api/domain-expired successful response */
+export interface DomainExpiredResponse {
+  total: number;
+  data: DomainExpiredItem[];
+  /** Active domains monitored in fleet */
+  active_domains_monitored: number;
+}

@@ -6,6 +6,8 @@ import type {
   QuickStats,
   SslExpiredItem,
   SslExpiredResponse,
+  DomainExpiredItem,
+  DomainExpiredResponse,
 } from "@shared/index.ts";
 import type { MonitorId, MonitorView } from "./types";
 
@@ -76,6 +78,31 @@ export function isSslExpiredResponse(value: unknown): value is SslExpiredRespons
   });
 }
 
+/**
+ * Runtime guard for GET /api/domain-expired responses.
+ */
+export function isDomainExpiredResponse(value: unknown): value is DomainExpiredResponse {
+  if (!isRecord(value)) return false;
+  if (!Number.isSafeInteger(value["total"]) || (value["total"] as number) < 0) return false;
+  if (!Number.isSafeInteger(value["active_domains_monitored"]) || (value["active_domains_monitored"] as number) < 0) return false;
+  const rows = value["data"];
+  if (!Array.isArray(rows)) return false;
+  return rows.every((row): row is DomainExpiredItem => {
+    if (!isRecord(row)) return false;
+    return (
+      typeof row["domain"] === "string" &&
+      row["domain"].length > 0 &&
+      typeof row["expiry"] === "string" &&
+      !Number.isNaN(Date.parse(row["expiry"])) &&
+      typeof row["days_left"] === "number" &&
+      !Number.isNaN(row["days_left"]) &&
+      (typeof row["last_deadline_sent"] === "string" ||
+        row["last_deadline_sent"] === null ||
+        typeof row["last_deadline_sent"] === "undefined")
+    );
+  });
+}
+
 /** Attach the ID brand. Runs only after the field passed a typeof check above. */
 function toMonitorView(row: DownMonitor): MonitorView {
   return { ...row, monitor_id: row.monitor_id as MonitorId };
@@ -118,5 +145,27 @@ export async function fetchSslExpired(): Promise<SslExpiredResponse> {
     total: raw.total,
     data: raw.data,
     active_tls_monitored: raw.active_tls_monitored,
+  };
+}
+
+export async function fetchDomainExpired(): Promise<DomainExpiredResponse> {
+  const res = await fetch(`${API_BASE}/domain-expired`, {
+    headers: { Accept: "application/json" },
+  });
+
+  if (!res.ok) {
+    const body: unknown = await res.json().catch(() => undefined);
+    const detail = isRecord(body) && typeof body["error"] === "string" ? body["error"] : undefined;
+    throw new Error(detail ?? `HTTP ${res.status}`);
+  }
+
+  const raw: unknown = await res.json();
+  if (!isDomainExpiredResponse(raw)) {
+    throw new Error(`Unexpected response from ${API_BASE}/domain-expired`);
+  }
+  return {
+    total: raw.total,
+    data: raw.data,
+    active_domains_monitored: raw.active_domains_monitored,
   };
 }

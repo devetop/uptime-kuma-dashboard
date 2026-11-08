@@ -113,3 +113,40 @@ FROM (
 WHERE x.valid_dt <= datetime('now', '+21 days')
 ORDER BY days_left ASC;
 `;
+
+/**
+ * ACTIVE DOMAINS MONITORED:
+ * Counts distinct monitored domains from domain_expiry table.
+ * Portable across MySQL/MariaDB and SQLite.
+ */
+export const ACTIVE_DOMAINS_MONITORED_SQL = `
+SELECT COUNT(DISTINCT de.domain) AS active_domains_monitored
+FROM domain_expiry de;
+`;
+
+/**
+ * Domain Expired queries:
+ * MySQL uses TIMESTAMPDIFF(DAY, NOW(), de.expiry) and NOW() + INTERVAL 21 DAY.
+ * SQLite uses CAST(julianday(de.expiry) - julianday('now') AS INTEGER) and datetime('now', '+21 days').
+ */
+export const DOMAIN_EXPIRED_MYSQL_SQL = `
+SELECT de.domain,
+       de.expiry,
+       TIMESTAMPDIFF(DAY, NOW(), de.expiry) AS days_left,
+       de.last_expiry_notification_sent     AS last_deadline_sent
+FROM domain_expiry de
+WHERE de.expiry IS NOT NULL
+  AND de.expiry <= NOW() + INTERVAL 21 DAY
+ORDER BY days_left ASC;
+`;
+
+export const DOMAIN_EXPIRED_SQLITE_SQL = `
+SELECT de.domain,
+       de.expiry,
+       CAST(julianday(de.expiry) - julianday('now') AS INTEGER) AS days_left,
+       de.last_expiry_notification_sent                         AS last_deadline_sent
+FROM domain_expiry de
+WHERE de.expiry IS NOT NULL
+  AND de.expiry <= datetime('now', '+21 days')
+ORDER BY days_left ASC;
+`;

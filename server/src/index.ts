@@ -47,6 +47,7 @@ async function main(): Promise<void> {
   const app = createApp({
     loadMonitors: bridge.fetchDownMonitors,
     loadSslExpired: bridge.fetchSslExpired,
+    loadDomainExpired: bridge.fetchDomainExpired,
   });
 
   const port = Number(process.env.PORT ?? 4242);
@@ -54,6 +55,7 @@ async function main(): Promise<void> {
     console.log(`[server] http://localhost:${port}  (db=${dbType})`);
     console.log('[server] GET /api/down-monitors');
     console.log('[server] GET /api/ssl-expired');
+    console.log('[server] GET /api/domain-expired');
   });
 
   // Graceful shutdown

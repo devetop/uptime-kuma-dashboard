@@ -1,7 +1,7 @@
 // Runnable self-check for the API trust-boundary guard.
 // Run: node --experimental-strip-types frontend/src/lib/api.test.ts
 // Deliberately no `node:assert` import — the frontend tsconfig has no node types.
-import { isDownMonitorsResponse, isSslExpiredResponse } from "./api.ts";
+import { isDownMonitorsResponse, isSslExpiredResponse, isDomainExpiredResponse } from "./api.ts";
 
 function assert(cond: boolean, msg: string): void {
   if (!cond) throw new Error(`FAIL: ${msg}`);
@@ -98,6 +98,46 @@ assert(isSslExpiredResponse({ total: 0, data: [], active_tls_monitored: 0 }), "e
   { ...okSslBody, active_tls_monitored: 1.5 },
 ].forEach((bad, i) => {
   assert(isSslExpiredResponse(bad) === false, `rejects ssl #${i}: ${JSON.stringify(bad)}`);
+});
+
+// Self-check for isDomainExpiredResponse
+const okDomainItem = {
+  domain: "app.production-service.io",
+  expiry: "2025-05-21T00:00:00.000Z",
+  days_left: -1,
+  last_deadline_sent: "2025-05-20T10:00:00.000Z",
+};
+
+const okDomainBody = { total: 1, data: [okDomainItem], active_domains_monitored: 86 };
+
+assert(isDomainExpiredResponse(okDomainBody), "valid domain payload accepted");
+assert(isDomainExpiredResponse({ total: 0, data: [], active_domains_monitored: 0 }), "empty domain payload accepted");
+assert(isDomainExpiredResponse({ ...okDomainBody, data: [{ ...okDomainItem, last_deadline_sent: null }] }), "null last_deadline_sent accepted");
+assert(isDomainExpiredResponse({ ...okDomainBody, data: [{ ...okDomainItem, last_deadline_sent: undefined }] }), "undefined last_deadline_sent accepted");
+
+[
+  null,
+  undefined,
+  [],
+  { ...okDomainBody, total: "1" },
+  { ...okDomainBody, total: -1 },
+  { ...okDomainBody, total: 1.5 },
+  { ...okDomainBody, total: Number.NaN },
+  { total: 1 },
+  { ...okDomainBody, data: {} },
+  { ...okDomainBody, data: [null] },
+  { ...okDomainBody, data: [{ ...okDomainItem, domain: "" }] },
+  { ...okDomainBody, data: [{ ...okDomainItem, domain: 123 }] },
+  { ...okDomainBody, data: [{ ...okDomainItem, expiry: "invalid-date" }] },
+  { ...okDomainBody, data: [{ ...okDomainItem, days_left: Number.NaN }] },
+  { ...okDomainBody, data: [{ ...okDomainItem, days_left: "3" }] },
+  { ...okDomainBody, data: [{ ...okDomainItem, last_deadline_sent: 12345 }] },
+  { total: 1, data: [okDomainItem] }, // missing active_domains_monitored
+  { ...okDomainBody, active_domains_monitored: "86" }, // string count
+  { ...okDomainBody, active_domains_monitored: -1 },
+  { ...okDomainBody, active_domains_monitored: 1.5 },
+].forEach((bad, i) => {
+  assert(isDomainExpiredResponse(bad) === false, `rejects domain #${i}: ${JSON.stringify(bad)}`);
 });
 
 console.log("api.test.ts: all assertions passed");

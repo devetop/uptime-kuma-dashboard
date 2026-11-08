@@ -6,6 +6,8 @@ import type {
   QuickStats,
   SslExpiredItem,
   SslExpiredResponse,
+  DomainExpiredItem,
+  DomainExpiredResponse,
 } from "@shared/index.ts";
 
 /** Cache TTL: 5s prevents hammering the DB on fast auto-refresh cycles */
@@ -18,6 +20,7 @@ interface CacheEntry<T> {
 
 let monitorsCache: CacheEntry<DownMonitorsResponse> | null = null;
 let sslCache: CacheEntry<SslExpiredResponse> | null = null;
+let domainCache: CacheEntry<DomainExpiredResponse> | null = null;
 
 export interface LoadedData {
   monitors: DownMonitor[];
@@ -33,9 +36,17 @@ export interface SslExpiredData {
 
 export type SslExpiredLoader = () => Promise<SslExpiredData> | SslExpiredData;
 
+export interface DomainExpiredData {
+  items: DomainExpiredItem[];
+  activeDomainsMonitored: number;
+}
+
+export type DomainExpiredLoader = () => Promise<DomainExpiredData> | DomainExpiredData;
+
 export interface AppLoaders {
   loadMonitors: MonitorLoader;
   loadSslExpired?: SslExpiredLoader;
+  loadDomainExpired?: DomainExpiredLoader;
 }
 
 /**
@@ -88,6 +99,29 @@ async function loadSslExpiredCached(loader: SslExpiredLoader): Promise<SslExpire
   return payload;
 }
 
+async function loadDomainExpiredCached(loader: DomainExpiredLoader): Promise<DomainExpiredResponse> {
+  const now = Date.now();
+  if (domainCache && now - domainCache.at < CACHE_TTL_MS) {
+    return domainCache.payload;
+  }
+
+  let data: DomainExpiredData;
+  try {
+    data = await loader();
+  } catch (err) {
+    if (domainCache) return domainCache.payload;
+    throw err;
+  }
+
+  const payload: DomainExpiredResponse = {
+    total: data.items.length,
+    data: data.items,
+    active_domains_monitored: data.activeDomainsMonitored,
+  };
+  domainCache = { at: now, payload };
+  return payload;
+}
+
 export function createApp(loaders: MonitorLoader | AppLoaders) {
   const app = express();
   app.disable("x-powered-by");
@@ -96,6 +130,8 @@ export function createApp(loaders: MonitorLoader | AppLoaders) {
     typeof loaders === "function" ? loaders : loaders.loadMonitors;
   const sslLoader: SslExpiredLoader | undefined =
     typeof loaders === "object" ? loaders.loadSslExpired : undefined;
+  const domainLoader: DomainExpiredLoader | undefined =
+    typeof loaders === "object" ? loaders.loadDomainExpired : undefined;
 
   // CORS — allows the frontend dev server origin, defaults to wildcard
   app.use((req, res, next) => {
@@ -126,6 +162,18 @@ export function createApp(loaders: MonitorLoader | AppLoaders) {
       } catch (err) {
         const message = err instanceof Error ? err.message : "Unknown error";
         const body: ApiErrorResponse = { error: `Failed to load SSL expired monitors: ${message}` };
+        res.status(500).json(body);
+      }
+    });
+  }
+
+  if (domainLoader) {
+    app.get("/api/domain-expired", async (_req: Request, res: Response) => {
+      try {
+        res.json(await loadDomainExpiredCached(domainLoader));
+      } catch (err) {
+        const message = err instanceof Error ? err.message : "Unknown error";
+        const body: ApiErrorResponse = { error: `Failed to load domain expired records: ${message}` };
         res.status(500).json(body);
       }
     });

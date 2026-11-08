@@ -1,4 +1,4 @@
-import type { DownMonitor, QuickStats, SslExpiredItem } from "@shared/index.ts";
+import type { DownMonitor, QuickStats, SslExpiredItem, DomainExpiredItem } from "@shared/index.ts";
 
 /** Raw row shape returned by DOWN_MONITORS_SQL */
 export interface RawMonitorRow {
@@ -33,6 +33,17 @@ export function mapActiveTlsMonitored(row: RawActiveTlsRow | null | undefined): 
   return Number.isSafeInteger(n) && n >= 0 ? n : 0;
 }
 
+/** Raw row shape returned by ACTIVE_DOMAINS_MONITORED_SQL */
+export interface RawActiveDomainsRow {
+  active_domains_monitored?: number | string | null;
+}
+
+/** Coerce the active-domains count row to a non-negative safe integer. */
+export function mapActiveDomainsMonitored(row: RawActiveDomainsRow | null | undefined): number {
+  const n = Number(row?.active_domains_monitored);
+  return Number.isSafeInteger(n) && n >= 0 ? n : 0;
+}
+
 /** Raw row shape returned by SSL_EXPIRED_*_SQL */
 export interface RawSslExpiredRow {
   monitor_id?: number | string | null;
@@ -40,6 +51,14 @@ export interface RawSslExpiredRow {
   type?: string | null;
   valid_to?: string | null;
   days_left?: number | string | null;
+}
+
+/** Raw row shape returned by DOMAIN_EXPIRED_*_SQL */
+export interface RawDomainExpiredRow {
+  domain?: string | null;
+  expiry?: string | null;
+  days_left?: number | string | null;
+  last_deadline_sent?: string | null;
 }
 
 /**
@@ -99,6 +118,32 @@ export function mapSslExpiredRows(rows: readonly RawSslExpiredRow[]): SslExpired
       type: String(r.type ?? ""),
       valid_to: String(r.valid_to),
       days_left: Math.round(daysLeft),
+    });
+  }
+  return result;
+}
+
+/**
+ * Coerce raw domain expired rows into typed DomainExpiredItem domain models.
+ * Filters out entries with missing or unparseable expiry / days_left values,
+ * ensuring values are safe numbers and never NaN.
+ */
+export function mapDomainExpiredRows(rows: readonly RawDomainExpiredRow[]): DomainExpiredItem[] {
+  const result: DomainExpiredItem[] = [];
+  for (const r of rows) {
+    if (!r.domain || r.expiry == null || r.days_left == null) continue;
+    const daysLeft = Number(r.days_left);
+    if (Number.isNaN(daysLeft)) continue;
+
+    // Check if expiry parses to a valid timestamp
+    const dateParsed = Date.parse(String(r.expiry));
+    if (Number.isNaN(dateParsed)) continue;
+
+    result.push({
+      domain: String(r.domain),
+      expiry: String(r.expiry),
+      days_left: Math.round(daysLeft),
+      last_deadline_sent: r.last_deadline_sent != null ? String(r.last_deadline_sent) : null,
     });
   }
   return result;

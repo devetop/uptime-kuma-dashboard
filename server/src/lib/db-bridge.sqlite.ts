@@ -1,16 +1,27 @@
 import "node:sqlite";
 import { DatabaseSync } from "node:sqlite";
-import type { DownMonitor, QuickStats, SslExpiredItem } from "@shared/index.ts";
-import { DOWN_MONITORS_SQL, QUICK_STATS_SQL, SSL_EXPIRED_SQLITE_SQL, ACTIVE_TLS_MONITORED_SQL } from "./sql.js";
+import type { DownMonitor, QuickStats, SslExpiredItem, DomainExpiredItem } from "@shared/index.ts";
+import {
+  DOWN_MONITORS_SQL,
+  QUICK_STATS_SQL,
+  SSL_EXPIRED_SQLITE_SQL,
+  ACTIVE_TLS_MONITORED_SQL,
+  DOMAIN_EXPIRED_SQLITE_SQL,
+  ACTIVE_DOMAINS_MONITORED_SQL,
+} from "./sql.js";
 import {
   mapDownMonitorRows,
   mapQuickStats,
   mapSslExpiredRows,
   mapActiveTlsMonitored,
+  mapDomainExpiredRows,
+  mapActiveDomainsMonitored,
   type RawMonitorRow,
   type RawQuickStatsRow,
   type RawSslExpiredRow,
   type RawActiveTlsRow,
+  type RawDomainExpiredRow,
+  type RawActiveDomainsRow,
 } from "./mappers.js";
 
 let dbHandle: DatabaseSync | null = null;
@@ -48,6 +59,16 @@ export function fetchSslExpired(): { items: SslExpiredItem[]; activeTlsMonitored
   return {
     items: mapSslExpiredRows(rows),
     activeTlsMonitored: mapActiveTlsMonitored(countRow),
+  };
+}
+
+export function fetchDomainExpired(): { items: DomainExpiredItem[]; activeDomainsMonitored: number } {
+  const client = getDb();
+  const rows = client.prepare(DOMAIN_EXPIRED_SQLITE_SQL).all() as unknown as RawDomainExpiredRow[];
+  const countRow = client.prepare(ACTIVE_DOMAINS_MONITORED_SQL).get() as unknown as RawActiveDomainsRow | undefined;
+  return {
+    items: mapDomainExpiredRows(rows),
+    activeDomainsMonitored: mapActiveDomainsMonitored(countRow),
   };
 }
 
