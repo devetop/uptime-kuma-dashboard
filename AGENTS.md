@@ -5,6 +5,7 @@
 - Backend: Express 5 + TypeScript (Node.js)
 - Frontend: React 19 + Vite 6 + TypeScript + Tailwind CSS 4
 - Tipe domain bersama: `shared/index.ts` (satu-satunya sumber kebenaran)
+- Schema tabel domain: `domain_expiry` (kolom `domain`, `expiry`, `last_expiry_notification_sent`), dibaca read-only seperti tabel lain
 
 ## Database (Uptime Kuma)
 - Schema: monitor, heartbeat, stat_minutely
@@ -14,13 +15,21 @@
 
 ## Kontrak API & Tipe Bersama
 - Semua tipe domain (`DownMonitor`, `QuickStats`, `DownMonitorsResponse`, `SslExpiredItem`, `SslExpiredResponse`) ada di `shared/index.ts`; server dan frontend mengimpornya via `@shared/index.ts`. Jangan menduplikasi bentuk response.
-- Dua endpoint: `GET /api/down-monitors` mengembalikan `{ total, data, stats }`; `total` = panjang `data`, `stats` = agregat cepat per status monitor. `GET /api/ssl-expired` mengembalikan `{ total, data, active_tls_monitored }`; `total` = panjang `data` (hanya sertifikat yang kedaluwarsa ≤ 21 hari), sedangkan `active_tls_monitored` = jumlah seluruh fleet TLS aktif (di luar filter 21 hari).
+- Tiga endpoint: `GET /api/down-monitors` mengembalikan `{ total, data, stats }`; `total` = panjang `data`, `stats` = agregat cepat per status monitor. `GET /api/ssl-expired` mengembalikan `{ total, data, active_tls_monitored }`; `total` = panjang `data` (hanya sertifikat yang kedaluwarsa ≤ 21 hari), sedangkan `active_tls_monitored` = jumlah seluruh fleet TLS aktif (di luar filter 21 hari). `GET /api/domain-expired` mengembalikan `{ total, data, active_domains_monitored }`; `total` = panjang `data` (domain kedaluwarsa ≤ 21 hari), `active_domains_monitored` = `COUNT(DISTINCT domain)` seluruh tabel `domain_expiry` (di luar filter 21 hari).
 - `QuickStats` (`up`, `down`, `pending`, `maintenance`, `unknown`, `pause`, `active`) dihitung `QUICK_STATS_SQL` di `server/src/lib/sql.ts`: status heartbeat `1=up, 0=down, 2=pending, 3=maintenance`, selain itu `unknown`; `active` dipropagasi dari parent ke child lewat recursive CTE (child non-aktif bila parent non-aktif).
 - `QUICK_STATS_SQL` dan `DOWN_MONITORS_SQL` harus portabel untuk MySQL/MariaDB dan SQLite karena kedua bridge memakainya. `query-quick-statistic.sql` di root hanya referensi dialek MySQL, bukan query yang dijalankan server.
 - Nilai mentah DB dinormalisasi di `server/src/lib/mappers.ts` (`Number(...)`, fallback `0`/`""`/`null`); jangan casting mentah ke tipe domain.
 - Response di-cache **5 detik**; bila loader gagal, sajikan cache lama, error 500 hanya jika cache kosong. Setiap endpoint punya cache sendiri (`monitorsCache`, `sslCache`).
-- Field baru pada response wajib ditambahkan di tiga tempat: `shared/index.ts`, guard di `frontend/src/lib/api.ts` (`isDownMonitorsResponse` atau `isSslExpiredResponse`), dan `frontend/src/lib/api.test.ts`.
-- Endpoint baru mengikuti pola dua-endpoint yang ada: tipe di `shared/index.ts`, branch cache + guard `if (loader)` di `server/src/lib/app.ts`, method di **kedua** bridge, query portabel di `server/src/lib/sql.ts`, mapper defensif di `server/src/lib/mappers.ts`, `fetch*` + guard runtime di `frontend/src/lib/api.ts`, lalu hook `use*` yang di-poll.
+- Field baru pada response wajib ditambahkan di tiga tempat: `shared/index.ts`, guard di `frontend/src/lib/api.ts` (`isDownMonitorsResponse`, `isSslExpiredResponse`, atau `isDomainExpiredResponse`), dan `frontend/src/lib/api.test.ts`.
+- Endpoint baru mengikuti pola tiga-endpoint yang ada: tipe di `shared/index.ts`, branch cache + guard `if (loader)` di `server/src/lib/app.ts`, method di **kedua** bridge, query portabel di `server/src/lib/sql.ts`, mapper defensif di `server/src/lib/mappers.ts`, `fetch*` + guard runtime di `frontend/src/lib/api.ts`, lalu hook `use*` yang di-poll.
+
+## Domain Expiration
+- `DOMAIN_EXPIRED_MYSQL_SQL` dan `DOMAIN_EXPIRED_SQLITE_SQL` di `server/src/lib/sql.ts` harus portabel untuk kedua dialek; `query-domain-expired.sql` di root hanya referensi dialek MySQL, bukan query yang dijalankan server.
+- Query membaca tabel `domain_expiry`, filter `expiry IS NOT NULL` dan domain kedaluwarsa ≤ **21 hari**; field `days_left` dihitung dengan `TIMESTAMPDIFF(DAY, NOW(), expiry)` (MySQL) / `CAST(julianday(expiry) - julianday('now') AS INTEGER)` (SQLite).
+- Bridge wajib mengekspor `fetchDomainExpired` selain `fetchDownMonitors` + `fetchSslExpired`; `AppLoaders` kini `(loadMonitors, loadSslExpired, loadDomainExpired)`, semua opsional dengan guard `if (loader)`.
+- `fetchDomainExpired` mengembalikan `{ items, activeDomainsMonitored }` (bukan array telanjang); `activeDomainsMonitored` dihitung `ACTIVE_DOMAINS_MONITORED_SQL` — query portabel tunggal `COUNT(DISTINCT de.domain) FROM domain_expiry de` (tanpa JOIN/JSON, aman untuk kedua dialek). Baris count dinormalisasi `mapActiveDomainsMonitored` (safe integer, fallback 0).
+- Baris domain mentah dinormalisasi `mapDomainExpiredRows`: baris dengan `domain`/`expiry`/`days_left` tak terparse dibuang (bukan di-coerce), `last_deadline_sent` boleh null.
+- Halaman frontend: `MonitorDomainPage.tsx`, hook `useDomainExpired` (poll 5 detik), tab `NavTab = 'dashboard' | 'ssl' | 'domain'`. Badge jumlah di nav "Monitor Domain" menghitung domain `days_left <= 7` (critical), dari data asli bukan hardcode.
 
 ## SSL Expiration
 - `SSL_EXPIRED_MYSQL_SQL` dan `SSL_EXPIRED_SQLITE_SQL` di `server/src/lib/sql.ts` harus portabel untuk kedua dialek; `query-ssl-expired.sql` di root hanya referensi dialek MySQL, bukan query yang dijalankan server.
