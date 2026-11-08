@@ -421,7 +421,6 @@ export function MonitorDomainPage({
                         <th scope="col" className="py-3.5 px-6">Expiration Date</th>
                         <th scope="col" className="py-3.5 px-6">Days Left</th>
                         <th scope="col" className="py-3.5 px-6">Notification Status</th>
-                        <th scope="col" className="py-3.5 px-6 text-right">Actions</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-medium">
@@ -459,14 +458,6 @@ export function MonitorDomainPage({
                                 ? formatValidTo(item.last_deadline_sent)
                                 : 'No notification sent'}
                             </td>
-                            <td className="py-4 px-6 align-middle text-right whitespace-nowrap">
-                              <button
-                                type="button"
-                                className="px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-[11px] font-semibold transition-colors"
-                              >
-                                {item.days_left < 0 ? 'Renew Now' : 'Inspect'}
-                              </button>
-                            </td>
                           </tr>
                         );
                       })}
@@ -474,17 +465,6 @@ export function MonitorDomainPage({
                   </table>
                 </div>
 
-                <div className="p-4 bg-slate-50/50 dark:bg-slate-800/30 border-t border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-slate-500 dark:text-slate-400">
-                  <span>Auto-renewal checks via WHOIS &amp; RDAP protocols</span>
-                  <div className="flex items-center gap-2">
-                    <span className="px-3 py-1.5 rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 font-semibold shadow-sm">
-                      Export Audit CSV
-                    </span>
-                    <span className="px-3 py-1.5 rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 font-semibold shadow-sm">
-                      Configure Registrar Webhooks
-                    </span>
-                  </div>
-                </div>
               </div>
 
               {/* Responsive: Cards on narrow viewports (< 45rem) */}
