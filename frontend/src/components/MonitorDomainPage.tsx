@@ -259,11 +259,11 @@ export function MonitorDomainPage({
                   {stats.totalFleet}
                 </span>
                 <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800 text-[10px] font-bold">
-                  100% Monitored
+                  {((stats.totalFleet / fleetDenom) * 100).toFixed(0)}% Monitored
                 </span>
               </div>
               <div className="mt-3 w-full bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden">
-                <div className="bg-emerald-500 h-full rounded-full" style={{ width: '88%' }} />
+                <div className="bg-emerald-500 h-full rounded-full transition-all" style={{ width: `${Math.min(Math.max((stats.totalFleet / fleetDenom) * 100, 25), 100)}%` }} />
               </div>
             </div>
           </div>

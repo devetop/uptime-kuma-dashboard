@@ -30,6 +30,7 @@
 - `fetchDomainExpired` mengembalikan `{ items, activeDomainsMonitored }` (bukan array telanjang); `activeDomainsMonitored` dihitung `ACTIVE_DOMAINS_MONITORED_SQL` — query portabel tunggal `COUNT(DISTINCT de.domain) FROM domain_expiry de` (tanpa JOIN/JSON, aman untuk kedua dialek). Baris count dinormalisasi `mapActiveDomainsMonitored` (safe integer, fallback 0).
 - Baris domain mentah dinormalisasi `mapDomainExpiredRows`: baris dengan `domain`/`expiry`/`days_left` tak terparse dibuang (bukan di-coerce), `last_deadline_sent` boleh null.
 - Halaman frontend: `MonitorDomainPage.tsx`, hook `useDomainExpired` (poll 5 detik), tab `NavTab = 'dashboard' | 'ssl' | 'domain'`. Badge jumlah di nav "Monitor Domain" menghitung domain `days_left <= 7` (critical), dari data asli bukan hardcode.
+- Kartu **"Active Domains Monitored"** di `MonitorDomainPage.tsx` menampilkan `activeDomainsMonitored` (dari API) sebagai `totalFleet`; jangan hardcode fleet. Badge `"100% Monitored"` dan bar progres pada kartu itu **sudah dinamis** dari `totalFleet / fleetDenom` (bar di-clamp `Math.min(Math.max(pct, 25), 100)` — bukan lagi mock 88%/100%).
 
 ## SSL Expiration
 - `SSL_EXPIRED_MYSQL_SQL` dan `SSL_EXPIRED_SQLITE_SQL` di `server/src/lib/sql.ts` harus portabel untuk kedua dialek; `query-ssl-expired.sql` di root hanya referensi dialek MySQL, bukan query yang dijalankan server.
@@ -49,7 +50,7 @@
 ## Frontend (Layout & Data Dashboard)
 - Breakpoint custom `wide` (bukan `lg`/`xl`) didefinisikan di `frontend/src/index.css`: `@custom-variant wide (@media (width >= 45rem));`. Tabel monitor tampil di `wide:block`, kartu di `wide:hidden`.
 - KPI grid di `frontend/src/App.tsx`: 4 kartu (`Up`, `Down`, `Paused`, `Global Uptime`). `Up`/`Down`/`Paused` diambil dari `stats`; `Global Uptime` masih nilai mock (hardcode di `App.tsx`), bukan dari API. Ketika nilai ini dipindah ke backend, tambahkan field di `shared/index.ts` + guard + test sesuai aturan tiga tempat di atas.
-- Kartu **"Active TLS Monitored"** di `MonitorSslPage.tsx` menampilkan `activeTlsMonitored` (dari API) sebagai `totalFleet`; jangan hardcode baseline fleet (sebelumnya `Math.max(total + 100, 128)`). Badge `"98.4% Up"` dan bar 88% pada kartu itu **masih mock** — bila diturunkan dari data, ikuti aturan tiga tempat.
+- Kartu **"Active TLS Monitored"** di `MonitorSslPage.tsx` menampilkan `activeTlsMonitored` (dari API) sebagai `totalFleet`; jangan hardcode baseline fleet (sebelumnya `Math.max(total + 100, 128)`). Badge `"100% Monitored"` dan bar progres pada kartu itu **sudah dinamis** dari `totalFleet / fleetDenom` (bar di-clamp `Math.min(Math.max(pct, 25), 100)` — bukan lagi mock 88%/100%).
 - Judul dashboard dan teks header bersifat statis (tidak dari API), termasuk logo, nav sidebar, dan versi footer `v2.4.0` di `FilterRail.tsx`.
 - Navigasi halaman memakai tab state lokal, bukan router: `NavTab = 'dashboard' | 'ssl'` di `FilterRail.tsx`, di-switch `useState<NavTab>` di `App.tsx`. Entry "Dashboard" dan "Monitor SSL" berfungsi; "Status Pages", "Teams", "Settings" masih murni dekoratif (tanpa handler) — jangan tambah rute/dependency router tanpa diminta.
 - Shell dashboard bersifat edge-to-edge (`w-full min-h-screen`, tanpa frame `max-w-[1440px]`/`rounded-[36px]`/`shadow-card`); backdrop `#DDE7F6`/`#0B132B` hanya di `html` (`frontend/src/index.css`), bukan di wrapper. KPI grid: 4 kartu via `grid-cols-1 sm:grid-cols-2 wide:grid-cols-4`, gaya `hover:border-*`.
@@ -122,7 +123,7 @@ Proyek ini dipaketkan sebagai dua service dalam satu `docker-compose.yml`:
 - `frontend/src/index.css` wajib memuat `@custom-variant dark (&:where(.dark, .dark *));` agar varian `dark:` mengikuti class `.dark` (default Tailwind v4 mengikuti media query sistem dan mengabaikan toggle manual).
 - Urutan resolusi tema saat load via inline script di `frontend/index.html` (anti-FOUC): `localStorage.theme` → `prefers-color-scheme` → light. Script inline minimal, tanpa dependency.
 - Toggle di `frontend/src/components/Header.tsx` (state: `frontend/src/hooks/useTheme.ts`): ikon moon/sun dengan `aria-label`, simpan pilihan ke `localStorage.theme`, ikuti perubahan sistem (`matchMedia` listener) hanya bila user belum memilih manual.
-- Setiap class warna/background/border/placeholder WAJIB punya pasangan `dark:` — tidak ada elemen yang hanya terang.
+- Setiap class warna/background/border/
 - Badge status (`frontend/src/lib/errors.ts`): tiap `badgeClass` wajib punya pasangan gelap `bg-<warna>-900/30 text-<warna>-300 border-<warna>-500`.
 
 ## Frontend (Halaman Monitor SSL)
