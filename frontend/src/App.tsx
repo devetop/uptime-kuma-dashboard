@@ -295,7 +295,7 @@ export function App() {
                     onChange={(e) => setFilter(e.target.value)}
                     autoComplete="off"
                     spellCheck={false}
-                    className="w-full min-h-11 rounded-full border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-800/40 px-4 text-xs font-medium text-slate-900 dark:text-white placeholder:text-slate-400 transition-colors focus:border-brand-500 focus:bg-white dark:focus:bg-slate-900 [&::-webkit-search-cancel-button]:appearance-none"
+                    className="w-full min-h-11 rounded-full border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-800/40 px-4 text-xs font-medium text-slate-900 dark:text-white placeholder:text-slate-400 transition-colors focus:border-brand-500 focus:outline-none focus-visible:outline-none [&::-webkit-search-cancel-button]:appearance-none"
                   />
                 </div>
 
