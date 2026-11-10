@@ -97,6 +97,34 @@ export function App() {
   // Metrics calculation
   const globalUptime = total === 0 ? '99.98%' : total === 1 ? '99.28%' : '98.45%';
 
+  // Total monitors for percentage calculation across Up / Down / Paused
+  const totalMonitors = Math.max(
+    (stats?.up ?? 0) + (stats?.down ?? 0) + (stats?.pause ?? 0),
+    total,
+    1,
+  );
+  const upCount = stats?.up ?? 0;
+  const downCount = stats?.down ?? 0;
+  const pauseCount = stats?.pause ?? 0;
+  const uptimeNumeric = parseFloat(globalUptime) || 0;
+
+  const upBarWidth = Math.min(
+    Math.max((upCount / totalMonitors) * 100, upCount > 0 ? 5 : 0),
+    100,
+  );
+  const downBarWidth = Math.min(
+    Math.max((downCount / totalMonitors) * 100, downCount > 0 ? 5 : 0),
+    100,
+  );
+  const pauseBarWidth = Math.min(
+    Math.max((pauseCount / totalMonitors) * 100, pauseCount > 0 ? 5 : 0),
+    100,
+  );
+  const uptimeBarWidth = Math.min(
+    Math.max(uptimeNumeric, uptimeNumeric > 0 ? 5 : 0),
+    100,
+  );
+
   // Critical SSL count for nav indicator
   const sslCriticalCount = useMemo(() => {
     return sslData.filter((i) => i.days_left <= 7).length;
@@ -180,6 +208,12 @@ export function App() {
                         {stats?.up ?? '—'}
                       </span>
                     </div>
+                    <div className="mt-3 w-full bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                      <div
+                        className="bg-emerald-500 h-full rounded-full transition-all"
+                        style={{ width: `${upBarWidth}%` }}
+                      />
+                    </div>
                   </div>
 
                   {/* Stat 2: Down */}
@@ -194,6 +228,12 @@ export function App() {
                       <span className="text-3xl font-extrabold text-slate-800 dark:text-white tracking-tight">
                         {stats?.down ?? '—'}
                       </span>
+                    </div>
+                    <div className="mt-3 w-full bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                      <div
+                        className="bg-rose-500 h-full rounded-full transition-all"
+                        style={{ width: `${downBarWidth}%` }}
+                      />
                     </div>
                   </div>
 
@@ -210,6 +250,12 @@ export function App() {
                         {stats?.pause ?? '—'}
                       </span>
                     </div>
+                    <div className="mt-3 w-full bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                      <div
+                        className="bg-amber-500 h-full rounded-full transition-all"
+                        style={{ width: `${pauseBarWidth}%` }}
+                      />
+                    </div>
                   </div>
 
                   {/* Stat 4: Global Uptime */}
@@ -224,6 +270,12 @@ export function App() {
                       <span className="text-3xl font-extrabold text-slate-800 dark:text-white tracking-tight">
                         {globalUptime}
                       </span>
+                    </div>
+                    <div className="mt-3 w-full bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                      <div
+                        className="bg-emerald-500 h-full rounded-full transition-all"
+                        style={{ width: `${uptimeBarWidth}%` }}
+                      />
                     </div>
                   </div>
                 </div>
