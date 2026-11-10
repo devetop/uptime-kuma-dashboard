@@ -45,6 +45,7 @@
 - State UI memakai discriminated union (`Result`, `LiveSlot`, `CountState`), bukan kombinasi boolean flag.
 - Self-check tanpa framework: `node --experimental-strip-types frontend/src/lib/api.test.ts` (assert manual, tanpa `node:assert` karena tsconfig frontend tidak memuat tipe Node).
 - Filter state dikelola hook `useFilters` (`frontend/src/hooks/useFilters.ts`); perubahan logika filter wajib lulus `node --experimental-strip-types frontend/src/hooks/useFilters.test.ts`.
+- Input filter memakai `type="search"` dan **hanya boleh punya satu kontrol clear**: tombol `Clear` milik app (yang memanggil `clearFilters`, sama dengan `EmptyState onClear`) adalah satu-satunya affordance; tombol cancel native webkit disembunyikan lewat kelas `[&::-webkit-search-cancel-button]:appearance-none` pada input (bukan aturan warna, jadi otomatis setara di light & dark). Jangan tambah handler clear kedua. Pola yang sama berlaku untuk `MonitorSslPage.tsx` dan `MonitorDomainPage.tsx`; setiap perubahan clear-affordance wajib tetap membiarkan `filtersOn` true saat hanya chip kategori aktif.
 - Ikon custom di `frontend/src/components/icons.tsx`; hapus ikon yang tidak terpakai bersama pemakainya (jangan sisakan ekspor mati). Aturan yang sama berlaku untuk komponen: hapus komponen mati bersama pemakainya.
 
 ## Frontend (Layout & Data Dashboard)
