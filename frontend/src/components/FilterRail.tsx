@@ -1,16 +1,32 @@
+import type { ReactElement } from 'react';
 import type { CountState } from '../lib/types';
 import type { ErrorCategory } from '../lib/errors';
 import type { CategoryCount } from '../hooks/useFilters';
 import {
   UpplyLogoIcon,
   DashboardIcon,
-  SslIcon,
-  DomainIcon,
   TeamsIcon,
   SettingsIcon,
-} from './icons';
+} from './navIcons';
+import { SslIcon, DomainIcon } from './icons';
 
 export type NavTab = 'dashboard' | 'ssl' | 'domain';
+
+/**
+ * Sidebar entries. The three live tabs pair with a count badge; Teams/Settings
+ * stay decorative (no `onSelectTab`) per AGENTS.md — no handler, no route.
+ */
+const NAV_ITEMS: {
+  tab: NavTab | null;
+  label: string;
+  Icon: (p: { className?: string }) => ReactElement;
+}[] = [
+  { tab: 'dashboard', label: 'Dashboard', Icon: DashboardIcon },
+  { tab: 'ssl', label: 'Monitor SSL', Icon: SslIcon },
+  { tab: 'domain', label: 'Monitor Domain', Icon: DomainIcon },
+  { tab: null, label: 'Teams', Icon: TeamsIcon },
+  { tab: null, label: 'Settings', Icon: SettingsIcon },
+];
 
 interface Props {
   count: CountState;
@@ -34,8 +50,12 @@ export function FilterRail({
   domainCriticalCount = 0,
 }: Props) {
   const isDashboard = activeTab === 'dashboard';
-  const isSsl = activeTab === 'ssl';
-  const isDomain = activeTab === 'domain';
+
+  /** Badge count for a live tab: dashboard total, or the critical-subset count. */
+  const badgeFor = (tab: NavTab): number => {
+    if (tab === 'dashboard') return count.state === 'count' ? count.total : 0;
+    return tab === 'ssl' ? sslCriticalCount : domainCriticalCount;
+  };
 
   return (
     <aside
@@ -56,95 +76,50 @@ export function FilterRail({
 
         {/* Navigation Menu Links */}
         <nav className="flex wide:flex-col gap-1.5 overflow-x-auto no-scrollbar font-medium" data-purpose="navigation-links">
-          {/* Dashboard Item */}
-          <a
-            href="#dashboard"
-            onClick={(e) => {
-              if (onSelectTab) {
-                e.preventDefault();
-                onSelectTab('dashboard');
-              }
-            }}
-            className={`flex items-center gap-3 px-4 py-2.5 rounded-full font-semibold transition-all whitespace-nowrap ${
-              isDashboard
-                ? 'bg-brand-500 text-white shadow-pill'
-                : 'text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/50 group'
-            }`}
-          >
-            <DashboardIcon className={`w-4 h-4 shrink-0 ${isDashboard ? 'text-white' : 'text-slate-400 group-hover:text-slate-700 dark:group-hover:text-slate-200 transition'}`} />
-            <span className="text-sm">Dashboard</span>
-            {count.state === 'count' && count.total > 0 && (
-              <span className={`ml-auto inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${isDashboard ? 'bg-white/20 text-white' : 'bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:text-rose-400'}`}>
-                {count.total}
-              </span>
-            )}
-          </a>
+          {NAV_ITEMS.map(({ tab, label, Icon }) => {
+            const badge = tab ? badgeFor(tab) : 0;
 
-          {/* Monitor SSL Nav Entry */}
-          <a
-            href="#ssl"
-            onClick={(e) => {
-              if (onSelectTab) {
-                e.preventDefault();
-                onSelectTab('ssl');
-              }
-            }}
-            className={`flex items-center gap-3 px-4 py-2.5 rounded-full font-semibold transition-all whitespace-nowrap ${
-              isSsl
-                ? 'bg-brand-500 text-white shadow-pill'
-                : 'text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/50 group'
-            }`}
-          >
-            <SslIcon className={`w-4 h-4 shrink-0 ${isSsl ? 'text-white' : 'text-slate-400 group-hover:text-slate-700 dark:group-hover:text-slate-200 transition'}`} />
-            <span className="text-sm">Monitor SSL</span>
-            {sslCriticalCount > 0 && (
-              <span className={`ml-auto inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${isSsl ? 'bg-white/20 text-white' : 'bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:text-rose-400'}`}>
-                {sslCriticalCount}
-              </span>
-            )}
-          </a>
+            // Decorative entries (tab === null) render inert: no click handler.
+            if (tab === null) {
+              return (
+                <a
+                  key={label}
+                  href={`#${label.toLowerCase()}`}
+                  className="flex items-center gap-3 px-4 py-2.5 rounded-full text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all group whitespace-nowrap"
+                >
+                  <Icon className="w-4 h-4 text-slate-400 group-hover:text-slate-700 dark:group-hover:text-slate-200 transition shrink-0" />
+                  <span className="text-sm">{label}</span>
+                </a>
+              );
+            }
 
-          {/* Monitor Domain Nav Entry */}
-          <a
-            href="#domain"
-            onClick={(e) => {
-              if (onSelectTab) {
-                e.preventDefault();
-                onSelectTab('domain');
-              }
-            }}
-            className={`flex items-center gap-3 px-4 py-2.5 rounded-full font-semibold transition-all whitespace-nowrap ${
-              isDomain
-                ? 'bg-brand-500 text-white shadow-pill'
-                : 'text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/50 group'
-            }`}
-          >
-            <DomainIcon className={`w-4 h-4 shrink-0 ${isDomain ? 'text-white' : 'text-slate-400 group-hover:text-slate-700 dark:group-hover:text-slate-200 transition'}`} />
-            <span className="text-sm">Monitor Domain</span>
-            {domainCriticalCount > 0 && (
-              <span className={`ml-auto inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${isDomain ? 'bg-white/20 text-white' : 'bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:text-rose-400'}`}>
-                {domainCriticalCount}
-              </span>
-            )}
-          </a>
-
-          {/* Teams */}
-          <a
-            href="#teams"
-            className="flex items-center gap-3 px-4 py-2.5 rounded-full text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all group whitespace-nowrap"
-          >
-            <TeamsIcon className="w-4 h-4 text-slate-400 group-hover:text-slate-700 dark:group-hover:text-slate-200 transition shrink-0" />
-            <span className="text-sm">Teams</span>
-          </a>
-
-          {/* Settings */}
-          <a
-            href="#settings"
-            className="flex items-center gap-3 px-4 py-2.5 rounded-full text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all group whitespace-nowrap"
-          >
-            <SettingsIcon className="w-4 h-4 text-slate-400 group-hover:text-slate-700 dark:group-hover:text-slate-200 transition shrink-0" />
-            <span className="text-sm">Settings</span>
-          </a>
+            const selected = activeTab === tab;
+            return (
+              <a
+                key={label}
+                href={`#${tab}`}
+                onClick={(e) => {
+                  if (onSelectTab) {
+                    e.preventDefault();
+                    onSelectTab(tab);
+                  }
+                }}
+                className={`flex items-center gap-3 px-4 py-2.5 rounded-full font-semibold transition-all whitespace-nowrap ${
+                  selected
+                    ? 'bg-brand-500 text-white shadow-pill'
+                    : 'text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/50 group'
+                }`}
+              >
+                <Icon className={`w-4 h-4 shrink-0 ${selected ? 'text-white' : 'text-slate-400 group-hover:text-slate-700 dark:group-hover:text-slate-200 transition'}`} />
+                <span className="text-sm">{label}</span>
+                {badge > 0 && (
+                  <span className={`ml-auto inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${selected ? 'bg-white/20 text-white' : 'bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:text-rose-400'}`}>
+                    {badge}
+                  </span>
+                )}
+              </a>
+            );
+          })}
         </nav>
 
         {/* Error Type Filter Chips (only active in dashboard view) */}

@@ -46,18 +46,31 @@
 - Self-check tanpa framework: `node --experimental-strip-types frontend/src/lib/api.test.ts` (assert manual, tanpa `node:assert` karena tsconfig frontend tidak memuat tipe Node).
 - Filter state dikelola hook `useFilters` (`frontend/src/hooks/useFilters.ts`); perubahan logika filter wajib lulus `node --experimental-strip-types frontend/src/hooks/useFilters.test.ts`.
 - Input filter memakai `type="search"` dan **hanya boleh punya satu kontrol clear**: tombol `Clear` milik app (yang memanggil `clearFilters`, sama dengan `EmptyState onClear`) adalah satu-satunya affordance; tombol cancel native webkit disembunyikan lewat kelas `[&::-webkit-search-cancel-button]:appearance-none` pada input (bukan aturan warna, jadi otomatis setara di light & dark). Jangan tambah handler clear kedua. Pola yang sama berlaku untuk `MonitorSslPage.tsx` dan `MonitorDomainPage.tsx`; setiap perubahan clear-affordance wajib tetap membiarkan `filtersOn` true saat hanya chip kategori aktif.
-- Ikon custom di `frontend/src/components/icons.tsx`; hapus ikon yang tidak terpakai bersama pemakainya (jangan sisakan ekspor mati). Aturan yang sama berlaku untuk komponen: hapus komponen mati bersama pemakainya.
-- Ketiga input filter/`type="search"` (`App.tsx`, `MonitorSslPage.tsx`, `MonitorDomainPage.tsx`) wajib punya **tepat satu** penanda fokus: border `focus:border-brand-500` (sudah punya pasangan `dark:border-slate-800`). Jangan pakai `focus:bg-*` (background default `bg-slate-50/60 dark:bg-slate-800/40` tidak boleh berubah saat fokus) dan jangan biarkan outline bawaan browser; netralkan dengan `focus:outline-none focus-visible:outline-none`. Jangan tambah `ring` kedua — itu membuat indikator fokus dobel.
+- Ikon custom dipisah dua modul: `frontend/src/components/icons.tsx` (ikon permukaan: refresh, warn, sun/moon, Ssl, Domain, Figma, Dribbble) dan `frontend/src/components/navIcons.tsx` (set sidebar: logo, Dashboard, Teams, Settings). Hapus ikon yang tidak terpakai bersama pemakainya (jangan sisakan ekspor mati). Aturan yang sama berlaku untuk komponen: hapus komponen mati bersama pemakainya.
+- Ketiga input filter/`type="search"` diwujudkan **satu komponen** `SearchBar` (`frontend/src/components/PageChrome.tsx`), dipakai `App.tsx`, `MonitorSslPage.tsx`, dan `MonitorDomainPage.tsx`. Jangan tulis ulang `<input>` filter di halaman mana pun — itu tempat drift style/clear-affordance dimulai. Tiap input wajib punya **tepat satu** penanda fokus: border `focus:border-brand-500` (sudah punya pasangan `dark:border-slate-800`). Jangan pakai `focus:bg-*` (background default `bg-slate-50/60 dark:bg-slate-800/40` tidak boleh berubah saat fokus) dan jangan biarkan outline bawaan browser; netralkan dengan `focus:outline-none focus-visible:outline-none`. Jangan tambah `ring` kedua — itu membuat indikator fokus dobel.
+
+## Aturan Modularitas Frontend (WAJIB)
+- **Batas 200 baris**: tidak ada file sumber (`.ts`/`.tsx`) yang boleh melewati **200 baris**. Sebelum menambah kode ke file yang mendekati batas, ekstrak dulu. Skrip cek cepat:
+  ```bash
+  find frontend/src server/src shared -name '*.ts*' | xargs wc -l | sort -rn | awk '$1>200'
+  ```
+- Ekstraksi harus ke **modul bermakna**, bukan sekadar memotong file supaya angka turun: satu komponen per file, logika murni ke `lib/`, state turunan ke `hooks/`. Jangan buat `utils.ts`/`helpers.ts` serbaguna sebagai tempat buangan.
+- Logika presentasi bersama (format tanggal, tier urgensi, hitung statistik, lebar bar, **persentase & rasio coverage**) **wajib** ke `frontend/src/lib/expiry.ts`; jangan duplikat ke dua halaman. Perubahan di sana wajib lulus `node --experimental-strip-types frontend/src/lib/expiry.test.ts`.
+- **Jangan hitung persentase inline di komponen.** Semua pembagian untuk lebar bar/badge memakai `pctOf` / `barWidth` / `fleetCoverage`; pembagian manual (`(a / b) * 100`) di JSX adalah tanda bug satuan (lihat aturan "Aturan unit" di bagian Dashboard), bukan sekadar style.
+- Perpanjangan aturan lama: KPI grid, distribution bar, header, error banner, search bar, dan tabel/kartu record adalah komponen bersama — jangan salin markup-nya kembali ke halaman.
 
 ## Frontend (Layout & Data Dashboard)
 - Breakpoint custom `wide` (bukan `lg`/`xl`) didefinisikan di `frontend/src/index.css`: `@custom-variant wide (@media (width >= 45rem));`. Tabel monitor tampil di `wide:block`, kartu di `wide:hidden`.
-- KPI grid di `frontend/src/App.tsx`: 4 kartu (`Up`, `Down`, `Paused`, `Global Uptime`) via `grid-cols-2 lg:grid-cols-4`. `Up`/`Down`/`Paused` diambil dari `stats`; `Global Uptime` masih nilai mock (hardcode di `App.tsx`), bukan dari API. Ketika nilai ini dipindah ke backend, tambahkan field di `shared/index.ts` + guard + test sesuai aturan tiga tempat di atas.
-- Tiap kartu KPI punya bar progres tipis di bawah angka: lebar = persentase (`up`/`down`/`pause` dari `stats` dibagi `totalMonitors`, `uptime` dari `globalUptime` numerik), di-clamp `Math.min(Math.max(pct, >0 ? 5 : 0), 100)` agar tetap terlihat walau nilainya kecil. Bar ini murni presentasi — jangan ubah jadi sumber data.
-- Kartu **"Active TLS Monitored"** di `MonitorSslPage.tsx` menampilkan `activeTlsMonitored` (dari API) sebagai `totalFleet`; jangan hardcode baseline fleet (sebelumnya `Math.max(total + 100, 128)`). **Masih mock**: badge `"98.4% Up"` dan bar `88%` pada kartu itu belum diturunkan dari data. Bila diturunkan, jangan tiru pola clamp `25`/`100` milik halaman Domain secara asal — hitung dari `totalFleet`, lalu tambahkan field di `shared/index.ts` + guard + test sesuai aturan tiga tempat.
+- KPI grid dashboard adalah komponen `frontend/src/components/StatsGrid.tsx`: 4 kartu (`Up`, `Down`, `Paused`, `Global Uptime`) via `grid-cols-2 lg:grid-cols-4`. `Up`/`Down`/`Paused` diambil dari `stats`; `Global Uptime` masih nilai mock, dihitung di `hooks/useDashboardState.ts` (`globalUptime`), bukan dari API. Ketika nilai ini dipindah ke backend, tambahkan field di `shared/index.ts` + guard + test sesuai aturan tiga tempat di atas.
+- Tiap kartu KPI dashboard punya bar progres tipis di bawah angka. **Dua rumus berbeda, jangan disatukan**: (a) tiga kartu hitung (`Up`/`Down`/`Paused`) memakai `barWidth(count, totalMonitors, 5)` — pembilang *jumlah*, penyebut *jumlah*; (b) `Global Uptime` sudah berupa **persentase**, jadi lebarnya persentase itu sendiri (clamp `Math.min(Math.max(pct, >0 ? 5 : 0), 100)`), **bukan** dibagi `totalMonitors` lagi. Bar ini murni presentasi — jangan ubah jadi sumber data. Bar di halaman SSL/Domain juga memakai `barWidth()` dengan pola clamp berbeda (min `15`/`25`/`40`) — jangan tukar salah satu ke pola yang lain tanpa alasan produk.
+- Kartu **"Active TLS Monitored"** (`MonitorSslPage.tsx`) menampilkan `activeTlsMonitored` (dari API) sebagai `totalFleet`; jangan hardcode baseline fleet (sebelumnya `Math.max(total + 100, 128)`). Badge `"98.4% Up"` dan bar `88%` di kartu itu **masih mock** dan **bukan** coverage fleet — jangan ganti ke `fleetCoverage()` (denominatornya beda: uptime vs cakupan). Bila diturunkan, tambahkan field di `shared/index.ts` + guard + test sesuai aturan tiga tempat.
+- Kartu **"Active Domains Monitored"** (`MonitorDomainPage.tsx`) memakai `fleetCoverage(inScope, tracked)` dari `lib/expiry.ts`, dengan `tracked = stats.totalFleet` (dari API) dan `inScope = data.length` (record yang sedang tampil). **Jangan** bagi `totalFleet` dengan dirinya sendiri (bug lama: `totalFleet / Math.max(totalFleet, 1)` selalu `1`, sehingga badge & bar terus-menerus `100%` dan menyembunyikan fleet yang belum lengkap). Badge `"100% Monitored"` dan bar-nya kini dinamis dari data asli.
+- **Aturan unit untuk semua nilai persentase/bar**: sebelum menambah pembagian, pastikan pembilang dan penyebut sejenis. Jangan pernah membagi sebuah persentase dengan jumlah entitas (itu mencampur satuan dan hasilnya mentok di clamp `100%`). Jangan bagi sebuah nilai dengan variabel yang sama (hasilnya konstan `1`). Pembagian apa pun wajib melewati helper di `lib/expiry.ts` (`pctOf`, `barWidth`, `fleetCoverage`) yang sudah menangani denominator `0`/negatif, dan wajib punya assert di `frontend/src/lib/expiry.test.ts`.
 - Judul dashboard dan teks header bersifat statis (tidak dari API), termasuk logo, nav sidebar, dan versi footer `v2.4.0` di `FilterRail.tsx`.
-- Navigasi halaman memakai tab state lokal, bukan router: `NavTab = 'dashboard' | 'ssl' | 'domain'` di `FilterRail.tsx`, di-switch `useState<NavTab>` di `App.tsx`. Entry "Dashboard", "Monitor SSL", dan "Monitor Domain" berfungsi; "Teams" dan "Settings" masih murni dekoratif (tanpa handler `onSelectTab`) — jangan tambah rute/dependency router tanpa diminta.
-- Shell dashboard bersifat edge-to-edge (`w-full min-h-screen`, tanpa frame `max-w-[1440px]`/`rounded-[36px]`/`shadow-card`); backdrop `#DDE7F6`/`#0B132B` hanya di `html` (`frontend/src/index.css`), bukan di wrapper. KPI grid dashboard (`App.tsx`) memakai `grid-cols-2 lg:grid-cols-4` (bukan breakpoint `wide` seperti `MonitorSslPage.tsx`/`MonitorDomainPage.tsx` yang memakai `grid-cols-1 sm:grid-cols-2 wide:grid-cols-4`), gaya `hover:border-*`. Breakpoint `wide` tetap wajib untuk pemilihan tabel-vs-kartu.
+- Navigasi halaman memakai tab state lokal, bukan router: `NavTab = 'dashboard' | 'ssl' | 'domain'` di `FilterRail.tsx`, di-switch `useState<NavTab>` di `App.tsx`. Entri sidebar didefinisikan sebagai satu array `NAV_ITEMS` (`tab: NavTab | null`) dan dirender satu loop; badge dihitung `badgeFor(tab)` dari `count`/`sslCriticalCount`/`domainCriticalCount`. Entry "Dashboard", "Monitor SSL", dan "Monitor Domain" berfungsi; "Teams" dan "Settings" dekoratif (`tab: null`, tanpa handler `onSelectTab`) — tambah entri baru lewat `NAV_ITEMS`, dan jangan tambah rute/dependency router tanpa diminta.
+- Shell dashboard bersifat edge-to-edge (`w-full min-h-screen`, tanpa frame `max-w-[1440px]`/`rounded-[36px]`/`shadow-card`); backdrop `#DDE7F6`/`#0B132B` hanya di `html` (`frontend/src/index.css`), bukan di wrapper. KPI grid dashboard (`StatsGrid.tsx`) memakai `grid-cols-2 lg:grid-cols-4` (bukan breakpoint `wide` seperti `ExpiryKpiGrid` yang dipakai halaman SSL/Domain dengan `grid-cols-1 sm:grid-cols-2 wide:grid-cols-4`), gaya `hover:border-*`. Breakpoint `wide` tetap wajib untuk pemilihan tabel-vs-kartu.
 - Record monitor punya satu sumber: `DownMonitorRow.tsx` mengekspor `DownMonitorRow` (tabel) + `DownMonitorCard` (kartu) beserta skeleton-nya, dibungkus satu `MonitorRecords.tsx` (mount di `App.tsx` lewat `<MonitorRecords />`). `MonitorCards.tsx`, `DownMonitorRecord.tsx`, dan `MonitorTable.tsx` sudah tidak dipakai — hapus bersama pemakainya (butuh izin).
+- Record SSL/Domain memakai pola yang sama dengan sumber tunggal `ExpiryRecords.tsx`: `ExpiryTable` (tabel) + `ExpiryCards` (kartu), keduanya dikendalikan satu array `ExpiryRecord[]` yang dibangun di halaman. Menambah kolom/baris berarti mengubah bentuk `ExpiryRecord` + `ExpiryRecordLabels`, bukan menyalin markup ke salah satu halaman.
 
 ## Containerization (Docker)
 ### Arsitektur: Full-Stack (Frontend + Backend)
@@ -125,15 +138,36 @@ Proyek ini dipaketkan sebagai dua service dalam satu `docker-compose.yml`:
 - Dark mode berbasis class `.dark` di `<html>`, bukan `prefers-color-scheme` murni.
 - `frontend/src/index.css` wajib memuat `@custom-variant dark (&:where(.dark, .dark *));` agar varian `dark:` mengikuti class `.dark` (default Tailwind v4 mengikuti media query sistem dan mengabaikan toggle manual).
 - Urutan resolusi tema saat load via inline script di `frontend/index.html` (anti-FOUC): `localStorage.theme` → `prefers-color-scheme` → light. Script inline minimal, tanpa dependency.
-- Toggle di `frontend/src/components/Header.tsx` (state: `frontend/src/hooks/useTheme.ts`): ikon moon/sun dengan `aria-label`, simpan pilihan ke `localStorage.theme`, ikuti perubahan sistem (`matchMedia` listener) hanya bila user belum memilih manual.
+- Toggle di `frontend/src/hooks/useTheme.ts`; tombolnya di `PageHeader` (`components/PageChrome.tsx`): ikon moon/sun dengan `aria-label`, simpan pilihan ke `localStorage.theme`, ikuti perubahan sistem (`matchMedia` listener) hanya bila user belum memilih manual.
 - Setiap class warna/background/border/placeholder WAJIB punya pasangan `dark:` — tidak ada elemen yang hanya terang.
 - Badge status (`frontend/src/lib/errors.ts`): tiap `badgeClass` wajib punya pasangan gelap `bg-<warna>-900/30 text-<warna>-300 border-<warna>-500`.
 
-## Frontend (Halaman Monitor SSL)
-- Halaman SSL adalah komponen terpisah `MonitorSslPage.tsx`, di-mount `App.tsx` hanya saat `currentTab === 'ssl'`; data dari hook `useSslExpired` (poll **5 detik**, sama seperti `useDownMonitors`).
-- Ikon `SslIcon` ditambahkan di `frontend/src/components/icons.tsx`; ikon yang tidak terpakai wajib dihapus bersama pemakainya (jangan sisakan ekspor mati).
+## Frontend (Halaman SSL & Domain)
+- Halaman SSL (`MonitorSslPage.tsx`) dan Domain (`MonitorDomainPage.tsx`) di-mount `App.tsx` hanya saat `currentTab` cocok; data dari `useSslExpired`/`useDomainExpired` (poll **5 detik**, sama seperti `useDownMonitors`).
+- Keduanya **wajib** memakai komponen bersama, bukan markup sendiri: `PageHeader` + `InlineError` + `SearchBar` (`PageChrome.tsx`), `ExpiryKpiGrid` + `RiskDistribution` (`ExpiryRiskPanel.tsx`), `ExpiryTable` + `ExpiryCards` (`ExpiryRecords.tsx`). Halaman hanya boleh menyisakan: map data → `ExpiryRecord[]`, teks label, dan footer khusus halaman.
+- `getUrgencyInfo` mengembalikan `tier` (`expired`/`critical`/`upcoming`) — urutan tier dipakai `RISK_TIERS` di `ExpiryRiskPanel.tsx`. Menambah tier berarti mengubah ketiganya + test.
+- Ikon `SslIcon`/`DomainIcon` ada di `frontend/src/components/icons.tsx`; ikon yang tidak terpakai wajib dihapus bersama pemakainya (jangan sisakan ekspor mati).
 - Sama seperti dashboard: setiap class warna/background/border wajib punya pasangan `dark:`.
-- Validasi: `cd frontend && npx tsc -p tsconfig.app.json --noEmit && npx vite build` harus lolos; bila menyentuh `api.ts`/tipe response, jalankan juga `node --experimental-strip-types frontend/src/lib/api.test.ts`.
+- Validasi: `cd frontend && npx tsc -p tsconfig.app.json --noEmit && npx vite build` harus lolos; bila menyentuh `api.ts`/tipe response jalankan juga `node --experimental-strip-types frontend/src/lib/api.test.ts`, dan bila menyentuh logika expiry jalankan `frontend/src/lib/expiry.test.ts`.
+
+## Peta Modul Frontend (letak wajib)
+Sebelum menambah kode, cek apakah modul berikut sudah punya tempatnya — jangan bikin file baru untuk hal yang sudah punya rumah:
+
+| Tanggung jawab | Modul |
+|---|---|
+| Format tanggal, tier urgensi, statistik expiry, lebar bar, persentase/coverage | `lib/expiry.ts` (+`.test.ts`) |
+| Guard runtime response & `fetch*` | `lib/api.ts` (+`.test.ts`) |
+| Badge kategori error | `lib/errors.ts` |
+| Tipe domain bersama | `shared/index.ts` |
+| Derived state dashboard (filter, slot, count, denominator KPI) | `hooks/useDashboardState.ts` |
+| Filter logika + chip kategori | `hooks/useFilters.ts` (+`.test.ts`) |
+| Header, error inline, search bar | `components/PageChrome.tsx` |
+| KPI grid + distribution bar expiry | `components/ExpiryRiskPanel.tsx` |
+| Tabel/kartu record expiry | `components/ExpiryRecords.tsx` |
+| KPI grid dashboard | `components/StatsGrid.tsx` |
+| Tabel/kartu record monitor | `components/MonitorRecords.tsx` + `DownMonitorRow.tsx` |
+| Sidebar, `NAV_ITEMS`, `NavTab`, footer versi | `components/FilterRail.tsx` |
+| Ikon permukaan / ikon sidebar | `components/icons.tsx` / `components/navIcons.tsx` |
 
 ## Aturan (ditingkatkan)
 - Jangan tambah dependency tanpa izin

@@ -1,139 +1,48 @@
-import { useEffect, useMemo, useState } from 'react';
-import type { CountState, LiveSlot } from './lib/types';
+import { useState } from 'react';
 import { useDownMonitors } from './hooks/useDownMonitors';
 import { useSslExpired } from './hooks/useSslExpired';
 import { useDomainExpired } from './hooks/useDomainExpired';
 import { useTheme } from './hooks/useTheme';
 import { useTicker } from './hooks/useTicker';
-import { filterRows, useCategoryCounts, useToggleSet } from './hooks/useFilters';
+import { useCriticalCount, useDashboardState } from './hooks/useDashboardState';
 import { Header } from './components/Header';
 import { ErrorBanner } from './components/ErrorBanner';
 import { FilterRail, type NavTab } from './components/FilterRail';
 import { MonitorRecords } from './components/MonitorRecords';
 import { MonitorSslPage } from './components/MonitorSslPage';
 import { MonitorDomainPage } from './components/MonitorDomainPage';
+import { StatsGrid } from './components/StatsGrid';
+import { SearchBar } from './components/PageChrome';
+
+/**
+ * The three polling hooks expose a common shape; this collapses ~15 destructured
+ * names that are re-spread verbatim into the page props.
+ */
+const pollProps = <T,>(s: { data: T[]; total: number; loading: boolean; error: string | null }) => ({
+  data: s.data,
+  total: s.total,
+  loading: s.loading,
+  error: s.error,
+});
 
 export function App() {
   const [currentTab, setCurrentTab] = useState<NavTab>('dashboard');
 
   const now = useTicker(1_000);
   const { data, total, stats, loading, error, reload } = useDownMonitors(5_000);
-  const {
-    data: sslData,
-    total: sslTotal,
-    activeTlsMonitored: sslActiveTlsMonitored,
-    loading: sslLoading,
-    error: sslError,
-    reload: sslReload,
-  } = useSslExpired(5_000);
-
-  const {
-    data: domainData,
-    total: domainTotal,
-    activeDomainsMonitored: domainActiveDomainsMonitored,
-    loading: domainLoading,
-    error: domainError,
-    reload: domainReload,
-  } = useDomainExpired(5_000);
-
+  const ssl = useSslExpired(5_000);
+  const domain = useDomainExpired(5_000);
   const { isDark, toggleTheme } = useTheme();
 
-  const [filter, setFilter] = useState('');
-  const query = filter.trim();
-  const cats = useCategoryCounts(data);
-  const types = useToggleSet();
-  const filtersOn = query !== '' || types.any;
-
-  const filtered = useMemo(
-    () => filterRows(data, query, types.active),
-    [data, query, types.active],
-  );
-
-  const firstLoad = loading && data.length === 0;
-
-  const [updatedAt, setUpdatedAt] = useState<number | null>(null);
-  useEffect(() => {
-    setUpdatedAt(Date.now());
-  }, [data]);
-
-  const unknown = Boolean(error) && data.length === 0;
-  const count: CountState = firstLoad
-    ? { state: 'skeleton' }
-    : unknown
-      ? { state: 'unknown' }
-      : { state: 'count', total };
-
-  const slot: LiveSlot = firstLoad
-    ? { state: 'loading' }
-    : loading
-      ? { state: 'refreshing' }
-      : updatedAt === null
-        ? { state: 'no-data' }
-        : { state: 'updated', at: updatedAt };
-
-  const emptyMessage = unknown
-    ? 'No monitor data available.'
-    : filtersOn
-      ? `No down monitors match${types.any ? ' these filters' : ` “${query}”`}.`
-      : 'All monitors are up.';
+  const dash = useDashboardState(data, total, stats, loading, error, now);
+  const sslCriticalCount = useCriticalCount(ssl.data);
+  const domainCriticalCount = useCriticalCount(domain.data);
 
   const refresh = () => {
     void reload();
-    void sslReload();
-    void domainReload();
+    void ssl.reload();
+    void domain.reload();
   };
-  const clearFilters = () => {
-    setFilter('');
-    types.clear();
-  };
-  const surface = {
-    firstLoad,
-    filtersOn,
-    emptyMessage,
-    onClearFilter: clearFilters,
-    now,
-  };
-
-  // Metrics calculation
-  const globalUptime = total === 0 ? '99.98%' : total === 1 ? '99.28%' : '98.45%';
-
-  // Total monitors for percentage calculation across Up / Down / Paused
-  const totalMonitors = Math.max(
-    (stats?.up ?? 0) + (stats?.down ?? 0) + (stats?.pause ?? 0),
-    total,
-    1,
-  );
-  const upCount = stats?.up ?? 0;
-  const downCount = stats?.down ?? 0;
-  const pauseCount = stats?.pause ?? 0;
-  const uptimeNumeric = parseFloat(globalUptime) || 0;
-
-  const upBarWidth = Math.min(
-    Math.max((upCount / totalMonitors) * 100, upCount > 0 ? 5 : 0),
-    100,
-  );
-  const downBarWidth = Math.min(
-    Math.max((downCount / totalMonitors) * 100, downCount > 0 ? 5 : 0),
-    100,
-  );
-  const pauseBarWidth = Math.min(
-    Math.max((pauseCount / totalMonitors) * 100, pauseCount > 0 ? 5 : 0),
-    100,
-  );
-  const uptimeBarWidth = Math.min(
-    Math.max(uptimeNumeric, uptimeNumeric > 0 ? 5 : 0),
-    100,
-  );
-
-  // Critical SSL count for nav indicator
-  const sslCriticalCount = useMemo(() => {
-    return sslData.filter((i) => i.days_left <= 7).length;
-  }, [sslData]);
-
-  // Critical Domain count for nav indicator
-  const domainCriticalCount = useMemo(() => {
-    return domainData.filter((i) => i.days_left <= 7).length;
-  }, [domainData]);
 
   return (
     <div className="min-h-screen w-full bg-white dark:bg-slate-900 selection:bg-brand-100 selection:text-brand-700 transition-colors">
@@ -141,10 +50,10 @@ export function App() {
       <div className="w-full min-h-screen bg-white dark:bg-slate-900 flex flex-col wide:flex-row">
         {/* Left Navigation Sidebar */}
         <FilterRail
-          count={count}
-          cats={cats}
-          active={types.active}
-          onToggle={types.toggle}
+          count={dash.count}
+          cats={dash.cats}
+          active={dash.types.active}
+          onToggle={dash.types.toggle}
           activeTab={currentTab}
           onSelectTab={setCurrentTab}
           sslCriticalCount={sslCriticalCount}
@@ -154,22 +63,16 @@ export function App() {
         {/* View Switching: Dashboard, Monitor SSL, or Monitor Domain */}
         {currentTab === 'ssl' ? (
           <MonitorSslPage
-            data={sslData}
-            total={sslTotal}
-            activeTlsMonitored={sslActiveTlsMonitored}
-            loading={sslLoading}
-            error={sslError}
+            {...pollProps(ssl)}
+            activeTlsMonitored={ssl.activeTlsMonitored}
             onRefresh={refresh}
             isDark={isDark}
             onToggleTheme={toggleTheme}
           />
         ) : currentTab === 'domain' ? (
           <MonitorDomainPage
-            data={domainData}
-            total={domainTotal}
-            activeDomainsMonitored={domainActiveDomainsMonitored}
-            loading={domainLoading}
-            error={domainError}
+            {...pollProps(domain)}
+            activeDomainsMonitored={domain.activeDomainsMonitored}
             onRefresh={refresh}
             isDark={isDark}
             onToggleTheme={toggleTheme}
@@ -181,9 +84,8 @@ export function App() {
             data-purpose="main-dashboard-body"
           >
             <div className="space-y-7">
-              {/* Top Header Bar */}
               <Header
-                slot={slot}
+                slot={dash.slot}
                 loading={loading}
                 isDark={isDark}
                 onRefresh={refresh}
@@ -192,143 +94,37 @@ export function App() {
 
               {error !== null && <ErrorBanner error={error} onRetry={refresh} />}
 
-              {/* KPI Statistics Overview (4 Cards) */}
-              <section aria-label="Quick statistics overview" data-purpose="kpi-metrics-grid">
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                  {/* Stat 1: Up */}
-                  <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl p-5 hover:border-slate-200 dark:hover:border-slate-700 transition">
-                    <span className="text-xs font-semibold text-slate-400 dark:text-slate-500 tracking-wide block mb-3">
-                      Up
-                    </span>
-                    <div className="flex items-center gap-3.5">
-                      <div className="w-8 h-8 rounded-full bg-emerald-50 dark:bg-emerald-950/60 flex items-center justify-center shrink-0">
-                        <span className="w-3.5 h-3.5 rounded-full bg-emerald-500 ring-4 ring-emerald-100 dark:ring-emerald-900/40" />
-                      </div>
-                      <span className="text-3xl font-extrabold text-slate-800 dark:text-white tracking-tight">
-                        {stats?.up ?? '—'}
-                      </span>
-                    </div>
-                    <div className="mt-3 w-full bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden">
-                      <div
-                        className="bg-emerald-500 h-full rounded-full transition-all"
-                        style={{ width: `${upBarWidth}%` }}
-                      />
-                    </div>
-                  </div>
+              <StatsGrid
+                stats={stats}
+                totalMonitors={dash.totalMonitors}
+                globalUptime={dash.globalUptime}
+              />
 
-                  {/* Stat 2: Down */}
-                  <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl p-5 hover:border-slate-200 dark:hover:border-slate-700 transition">
-                    <span className="text-xs font-semibold text-slate-400 dark:text-slate-500 tracking-wide block mb-3">
-                      Down
-                    </span>
-                    <div className="flex items-center gap-3.5">
-                      <div className="w-8 h-8 rounded-full bg-rose-50 dark:bg-rose-950/60 flex items-center justify-center shrink-0">
-                        <span className="w-3.5 h-3.5 rounded-full bg-rose-500 ring-4 ring-rose-100 dark:ring-rose-900/40" />
-                      </div>
-                      <span className="text-3xl font-extrabold text-slate-800 dark:text-white tracking-tight">
-                        {stats?.down ?? '—'}
-                      </span>
-                    </div>
-                    <div className="mt-3 w-full bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden">
-                      <div
-                        className="bg-rose-500 h-full rounded-full transition-all"
-                        style={{ width: `${downBarWidth}%` }}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Stat 3: Paused */}
-                  <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl p-5 hover:border-slate-200 dark:hover:border-slate-700 transition">
-                    <span className="text-xs font-semibold text-slate-400 dark:text-slate-500 tracking-wide block mb-3">
-                      Paused
-                    </span>
-                    <div className="flex items-center gap-3.5">
-                      <div className="w-8 h-8 rounded-full bg-amber-50 dark:bg-amber-950/60 flex items-center justify-center shrink-0">
-                        <span className="w-3.5 h-3.5 rounded-full bg-amber-500 ring-4 ring-amber-100 dark:ring-amber-900/40" />
-                      </div>
-                      <span className="text-3xl font-extrabold text-slate-800 dark:text-white tracking-tight">
-                        {stats?.pause ?? '—'}
-                      </span>
-                    </div>
-                    <div className="mt-3 w-full bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden">
-                      <div
-                        className="bg-amber-500 h-full rounded-full transition-all"
-                        style={{ width: `${pauseBarWidth}%` }}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Stat 4: Global Uptime */}
-                  <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl p-5 hover:border-slate-200 dark:hover:border-slate-700 transition">
-                    <span className="text-xs font-semibold text-slate-400 dark:text-slate-500 tracking-wide block mb-3">
-                      Global Uptime
-                    </span>
-                    <div className="flex items-center gap-3.5">
-                      <div className="w-8 h-8 rounded-full bg-emerald-50 dark:bg-emerald-950/60 flex items-center justify-center shrink-0">
-                        <span className="w-3.5 h-3.5 rounded-full bg-emerald-500 ring-4 ring-emerald-100 dark:ring-emerald-900/40" />
-                      </div>
-                      <span className="text-3xl font-extrabold text-slate-800 dark:text-white tracking-tight">
-                        {globalUptime}
-                      </span>
-                    </div>
-                    <div className="mt-3 w-full bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden">
-                      <div
-                        className="bg-emerald-500 h-full rounded-full transition-all"
-                        style={{ width: `${uptimeBarWidth}%` }}
-                      />
-                    </div>
-                  </div>
-                </div>
-              </section>
-
-              {/* Filter & Search Toolbar */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2">
-                <div className="relative flex-1 max-w-md">
-                  <label htmlFor="monitor-filter" className="sr-only">
-                    Filter by monitor name or error message
-                  </label>
-                  <input
-                    id="monitor-filter"
-                    type="search"
-                    placeholder="Search by monitor name or error message..."
-                    value={filter}
-                    onChange={(e) => setFilter(e.target.value)}
-                    autoComplete="off"
-                    spellCheck={false}
-                    className="w-full min-h-11 rounded-full border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-800/40 px-4 text-xs font-medium text-slate-900 dark:text-white placeholder:text-slate-400 transition-colors focus:border-brand-500 focus:outline-none focus-visible:outline-none [&::-webkit-search-cancel-button]:appearance-none"
-                  />
-                </div>
-
-                <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
-                  <span>
-                    Showing <strong className="text-slate-800 dark:text-slate-200 font-mono">{filtered.length}</strong> of{' '}
-                    <span className="font-mono">{total}</span> down monitors
-                  </span>
-                  {filtersOn && (
-                    <button
-                      type="button"
-                      onClick={clearFilters}
-                      className="text-brand-600 dark:text-brand-400 font-semibold underline hover:text-brand-700 ml-1"
-                    >
-                      Clear
-                    </button>
-                  )}
-                </div>
-              </div>
+              <SearchBar
+                id="monitor-filter"
+                label="Filter by monitor name or error message"
+                placeholder="Search by monitor name or error message..."
+                value={dash.filter}
+                onChange={dash.setFilter}
+                onClear={dash.clearFilters}
+                shown={dash.filtered.length}
+                total={total}
+                suffix="down monitors"
+              />
 
               {/* Announce live filtering */}
               <p aria-live="polite" aria-atomic="true" className="sr-only">
-                {firstLoad
+                {dash.firstLoad
                   ? 'Loading down monitors'
                   : loading
                     ? 'Refreshing down monitors'
-                    : filtered.length === 0
-                      ? emptyMessage
-                      : `${filtered.length} of ${total} down monitors shown`}
+                    : dash.filtered.length === 0
+                      ? dash.surface.emptyMessage
+                      : `${dash.filtered.length} of ${total} down monitors shown`}
               </p>
 
               {/* Latest Alerts Data Section */}
-              <MonitorRecords rows={filtered} {...surface} />
+              <MonitorRecords rows={dash.filtered} {...dash.surface} />
             </div>
           </main>
         )}
