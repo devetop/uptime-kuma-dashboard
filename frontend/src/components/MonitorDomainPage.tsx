@@ -5,7 +5,7 @@ import { EmptyState } from './EmptyState';
 import { PageHeader, InlineError, SearchBar } from './PageChrome';
 import { ExpiryKpiGrid, RiskDistribution } from './ExpiryRiskPanel';
 import { ExpiryCards, ExpiryTable, type ExpiryRecord, type ExpiryRecordLabels } from './ExpiryRecords';
-import { computeExpiryStats, fleetCoverage, formatValidTo } from '../lib/expiry';
+import { computeExpiryStats, formatValidTo } from '../lib/expiry';
 
 const LABELS: ExpiryRecordLabels = {
   headers: ['Domain / Registrar', 'Expiration Date', 'Days Left', 'Notification Status'],
@@ -60,10 +60,6 @@ export function MonitorDomainPage({
     status: item.last_deadline_sent ? formatValidTo(item.last_deadline_sent) : 'No notification sent',
   }));
 
-  // Fleet card: coverage is records-in-view over the tracked fleet, never
-  // `totalFleet / totalFleet` (which pinned the badge and bar at 100%).
-  const coverage = fleetCoverage(data.length, stats.totalFleet);
-
   return (
     <main
       className="flex-1 bg-white dark:bg-slate-900 p-6 sm:p-8 lg:p-10 flex flex-col justify-between overflow-x-hidden transition-colors"
@@ -85,14 +81,7 @@ export function MonitorDomainPage({
         <ExpiryKpiGrid
           expiredLabel="Expired Domains"
           stats={stats}
-          total={total}
-          fleet={{
-            label: 'Active Domains Monitored',
-            badge: coverage.badge,
-            badgeClass:
-              'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800',
-            barPct: coverage.barPct,
-          }}
+          fleet={{ label: 'Active Domains Monitored' }}
         />
 
         <RiskDistribution

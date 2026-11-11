@@ -81,17 +81,7 @@ export function MonitorSslPage({
         <ExpiryKpiGrid
           expiredLabel="Expired Certificates"
           stats={stats}
-          total={total}
-          // ponytail: badge is an uptime percentage, NOT fleet coverage — do not
-          // replace with `fleetCoverage()` (different denominator). Still mock;
-          // wire to a real uptime field when the API exposes one.
-          fleet={{
-            label: 'Active TLS Monitored',
-            badge: '98.4% Up',
-            badgeClass:
-              'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800',
-            barPct: '88%',
-          }}
+          fleet={{ label: 'Active TLS Monitored' }}
         />
 
         <RiskDistribution

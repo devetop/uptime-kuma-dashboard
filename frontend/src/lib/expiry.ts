@@ -129,10 +129,10 @@ export function barWidth(count: number, total: number, minPct: number): string {
  * ratio here — `tracked / tracked` would always read 100% and hide a partial
  * fleet, which is exactly the bug this replaces.
  */
-export function fleetCoverage(inScope: number, tracked: number) {
+export function fleetCoverage(inScope: number, tracked: number, label = 'Monitored') {
   const pct = tracked <= 0 ? 0 : Math.min((inScope / tracked) * 100, 100);
   return {
-    badge: `${Math.round(pct)}% Monitored`,
+    badge: `${Math.round(pct)}% ${label}`,
     // Floor keeps a small-but-real share visible on the thin KPI bar.
     barPct: `${Math.min(Math.max(pct, inScope > 0 ? 25 : 0), 100)}%`,
   };

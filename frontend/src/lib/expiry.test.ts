@@ -41,6 +41,11 @@ const tiny = fleetCoverage(1, 1000);
 assert(tiny.barPct === '25%', 'small real share keeps its floor');
 assert(fleetCoverage(99, 100).badge === '99% Monitored', 'near-full fleet is not rounded up to 100');
 
+// Label is a parameter: same numbers, different (non-misleading) word. The
+// Domain page reads "% Up"; the default stays "% Monitored" for other callers.
+assert(fleetCoverage(0, 44, 'Up').badge === '0% Up', 'zero in-scope reads 0% Up, not 0% Monitored');
+assert(fleetCoverage(15, 44, 'Up').badge === '34% Up', 'partial fleet reads 34% Up');
+
 // Unparseable dates are returned as-is rather than showing "Invalid Date".
 assert(formatValidTo('2025-05-20T14:00:00.000Z') === 'May 20, 2025 · 14:00 UTC', 'utc format');
 assert(formatValidTo('not-a-date') === 'not-a-date', 'bad date falls through');

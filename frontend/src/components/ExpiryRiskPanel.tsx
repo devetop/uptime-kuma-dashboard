@@ -31,17 +31,11 @@ function KpiCard({
   dotClass,
   value,
   valueClass,
-  badge,
-  badgeClass,
-  barPct,
 }: {
   label: string;
   dotClass: string;
   value: number | string;
   valueClass: string;
-  badge?: string;
-  badgeClass?: string;
-  barPct: string;
 }) {
   return (
     <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl p-5 hover:border-slate-200 dark:hover:border-slate-700 transition flex flex-col justify-between">
@@ -53,16 +47,6 @@ function KpiCard({
       </div>
       <div className="mt-4 flex items-baseline justify-between">
         <span className={`text-3xl font-extrabold tracking-tight ${valueClass}`}>{value}</span>
-        {badge && (
-          <span
-            className={`px-2.5 py-0.5 rounded-full border text-[10px] font-bold ${badgeClass}`}
-          >
-            {badge}
-          </span>
-        )}
-      </div>
-      <div className="mt-3 w-full bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden">
-        <div className={`${dotClass} h-full rounded-full transition-all`} style={{ width: barPct }} />
       </div>
     </div>
   );
@@ -72,32 +56,18 @@ interface KpiGridProps {
   /** Card 1 label differs per domain: "Expired Certificates" vs "Expired Domains". */
   expiredLabel: string;
   stats: ExpiryStats;
-  /** Denominator for the three risk bars (the filtered record count). */
-  total: number;
-  /** Card 4 — the fleet card, whose badge and bar are page-specific. */
-  fleet: { label: string; badge: string; badgeClass: string; barPct: string };
+  /** Card 4 — the fleet card label only; badge/bar removed as duplicates. */
+  fleet: { label: string };
 }
 
-const RISK_BADGES = [
-  {
-    label: 'Action Req.',
-    valueClass: 'text-rose-600 dark:text-rose-400',
-    badgeClass: 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/60 dark:text-rose-300 dark:border-rose-800',
-  },
-  {
-    label: 'Severe',
-    valueClass: 'text-slate-800 dark:text-white',
-    badgeClass: 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800',
-  },
-  {
-    label: 'Pending',
-    valueClass: 'text-slate-800 dark:text-white',
-    badgeClass: 'bg-sky-50 text-sky-700 border-sky-200 dark:bg-sky-950/60 dark:text-sky-300 dark:border-sky-800',
-  },
+const RISK_VALUE_CLASSES = [
+  'text-rose-600 dark:text-rose-400',
+  'text-slate-800 dark:text-white',
+  'text-slate-800 dark:text-white',
 ] as const;
 
 /** The 4-card KPI strip at the top of both expiry pages. */
-export function ExpiryKpiGrid({ expiredLabel, stats, total, fleet }: KpiGridProps) {
+export function ExpiryKpiGrid({ expiredLabel, stats, fleet }: KpiGridProps) {
   const counts = [stats.expiredCount, stats.criticalCount, stats.upcomingCount];
   const labels = [expiredLabel, 'Critical Expiry (≤ 7d)', 'Upcoming Expiry (≤ 21d)'];
 
@@ -110,10 +80,7 @@ export function ExpiryKpiGrid({ expiredLabel, stats, total, fleet }: KpiGridProp
             label={labels[i]}
             dotClass={tier.dotClass}
             value={counts[i]}
-            valueClass={RISK_BADGES[i].valueClass}
-            badge={RISK_BADGES[i].label}
-            badgeClass={RISK_BADGES[i].badgeClass}
-            barPct={barWidth(counts[i], total, tier.minPct)}
+            valueClass={RISK_VALUE_CLASSES[i]}
           />
         ))}
         <KpiCard
@@ -121,9 +88,6 @@ export function ExpiryKpiGrid({ expiredLabel, stats, total, fleet }: KpiGridProp
           dotClass="bg-emerald-500"
           value={stats.totalFleet}
           valueClass="text-slate-800 dark:text-white"
-          badge={fleet.badge}
-          badgeClass={fleet.badgeClass}
-          barPct={fleet.barPct}
         />
       </div>
     </section>
