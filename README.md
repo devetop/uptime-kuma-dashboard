@@ -80,24 +80,25 @@ monitoring-dashboard/
 
 ## Environment variables
 
+Copy `server/.env.example` to `server/.env` and edit it as needed:
+
 ```dotenv
-# server/.env.example — copy to server/.env and edit
-DB_TYPE=mariadb          # or "sqlite"
-DB_HOST=103.103.21.41    # required when DB_TYPE=mariadb|mysql
-DB_PORT=3306             # required when DB_TYPE=mariadb|mysql
-DB_NAME=kuma             # required when DB_TYPE=mariadb|mysql
-DB_USER=uptimekuma       # required when DB_TYPE=mariadb|mysql
-DB_PASS=<YOUR-DB-PASSWORD>  # required when DB_TYPE=mariadb|mysql
+# Database connection for Uptime Kuma (choose the one that matches your setup)
+# MariaDB / MySQL
+# DB_TYPE=mariadb
+# DB_HOST=localhost
+# DB_PORT=3306
+# DB_NAME=kuma
+# DB_USER=uptimekuma
+# DB_PASS=your-db-password
 
-# SQLite alternative (no host/user/pass needed)
+# SQLite (Uptime Kuma default, file-backed)
 # DB_TYPE=sqlite
-# DB_PATH=./data/kuma.db
+# DB_PATH=../data/kuma.db
 
-# Optional — dev CORS origin
-FRONTEND_ORIGIN=http://localhost:5173
-
-# Server
+# Server options
 PORT=4242
+FRONTEND_ORIGIN=http://localhost:5173
 ```
 
 ## Notes
